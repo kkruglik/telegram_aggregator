@@ -1,0 +1,21 @@
+[project]
+name = "telegram-aggregator-bot"
+version = "0.1.0"
+description = "Add your description here"
+requires-python = ">=3.11"
+dependencies = [
+    "aiogram>=3.18.0",
+    "apscheduler>=3.11.0",
+    "asyncpg>=0.30.0",
+    "google-genai>=1.7.0",
+    "python-dotenv>=1.1.0",
+    "pytz>=2025.2",
+    "pyyaml>=6.0.2",
+    "telethon>=1.39.0",
+    "timezonefinder>=6.5.9",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3.5",
+]
