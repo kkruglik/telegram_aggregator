@@ -2,9 +2,9 @@ import asyncio
 import logging
 from datetime import datetime
 
-from src.tg_aggregator.utils.scraper_utils import get_today_messages
-from ..services.summarizer import generate_summary
-from ..types import FeedContent, Post
+from tg_aggregator.services.summarizer import generate_summary
+from tg_aggregator.types import FeedContent, Post
+from tg_aggregator.utils.scraper_utils import get_today_messages
 
 logger = logging.getLogger('news_aggregator')
 
