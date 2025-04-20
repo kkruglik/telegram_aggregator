@@ -1,7 +1,9 @@
-# app/db/engine.py
-import asyncpg
 from contextlib import asynccontextmanager
-from ..config import DATABASE_URL
+
+import asyncpg
+
+from tg_aggregator.config import DATABASE_URL
+
 
 @asynccontextmanager
 async def get_connection():
