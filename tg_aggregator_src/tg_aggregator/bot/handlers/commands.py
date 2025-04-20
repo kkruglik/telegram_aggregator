@@ -8,7 +8,7 @@ from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import Message, ReplyKeyboardMarkup, KeyboardButton
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
-from src.tg_aggregator.core.registry import UserRegistry, FeedsRegistry
+from tg_aggregator_src.tg_aggregator.core.registry import UserRegistry, FeedsRegistry
 
 logger = logging.getLogger('news_aggregator')
 
@@ -27,8 +27,8 @@ class RegistrationStates(StatesGroup):
 
 def create_time_selection_keyboard():
     builder = InlineKeyboardBuilder()
-    hours = ["06:00", "07:00", "08:00", "09:00", "10:00", "11:40",
-             "12:00", "14:00", "18:03", "18:15", "20:30", "22:00"]
+    hours = ["06:00", "07:00", "08:00", "09:45", "10:00", "11:40",
+             "12:00", "14:00", "15:14", "18:15", "20:30", "22:00"]
 
     for hour in hours:
         builder.button(text=hour, callback_data=f"time:{hour}")
