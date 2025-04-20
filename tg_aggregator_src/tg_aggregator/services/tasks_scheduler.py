@@ -1,6 +1,6 @@
 import asyncio
-from typing import Callable, Dict, Any, Union, Coroutine
 import logging
+from typing import Callable, Dict, Any, Union, Coroutine
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
