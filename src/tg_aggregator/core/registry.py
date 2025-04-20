@@ -2,11 +2,11 @@ import asyncio
 import logging
 from datetime import timedelta, datetime
 
+from src.tg_aggregator.utils.scraper_utils import get_channel_id
 from .feed import TelegramFeed
 from .user import User
-from ..services.tasks_scheduler import TasksScheduler
-from ..services.telethon_scraper import TelegramScraper
 from ..db.repository import DatabaseRepository
+from ..services.tasks_scheduler import TasksScheduler
 
 logger = logging.getLogger('news_aggregator')
 
@@ -107,12 +107,10 @@ class UserRegistry:
 class FeedsRegistry:
     _feeds: dict[int, TelegramFeed] = {}
     _feeds_users_count: dict[int, int] = {}
-    _scraper_service: TelegramScraper = None
 
     @classmethod
-    async def initialize(cls, scraper_service) -> None:
+    async def initialize(cls) -> None:
         await cls._load_feeds_from_db()
-        cls._scraper_service = scraper_service
 
     @classmethod
     async def _load_feeds_from_db(cls) -> None:
@@ -139,9 +137,9 @@ class FeedsRegistry:
 
     @classmethod
     async def create_or_get_feed(cls, feed_name: str):
-        channel_id, channel_name = await cls._scraper_service.get_channel_id(feed_name)
+        channel_id, channel_name = await get_channel_id(feed_name)
         if channel_id is None:
-            raise Exception(f"[FeedsRegistry] Feed {feed_name} not found.")
+            raise ValueError(f"[FeedsRegistry] Feed {feed_name} not found.")
 
         if channel_id in cls._feeds:
             cls._feeds_users_count[channel_id] += 1
