@@ -2,13 +2,11 @@ import asyncio
 import logging.config
 
 from .bot.bot import start_bot, bot
+from .config import DATABASE_URL
 from .core.registry import UserRegistry, FeedsRegistry
-from .core.feed import TelegramFeed
 from .core.user import User
-from .services.telethon_scraper import TelegramScraper
-from .utils.utils import load_yaml
-from .config import API_ID, API_HASH, DATABASE_URL
 from .db.repository import DatabaseRepository
+from .utils.utils import load_yaml
 
 logger = logging.getLogger('news_aggregator')
 config = load_yaml('config/logger.yaml')
@@ -20,21 +18,18 @@ logging.config.dictConfig(config)
 # TODO do i need a constant scraper.start()?
 # TODO Added TTL-based cache expiration to prevent unbounded memory growth
 # TODO Add sync when get user/feeds
-# Todo add a normal prompt
+# TODO what if was no messages during the period
+# TODO add a documentation about bot logic, for now its really poorly documented
+# TODO should i use microservices for summarization and scraping?
+# TODO Telegram server says - Bad Request: message is too long
 
 
 async def main():
-    scraper = TelegramScraper(
-        api_id=API_ID,
-        api_hash=API_HASH,
-    )
     await DatabaseRepository.initialize(DATABASE_URL)
-
-    TelegramFeed.set_scraper_service(scraper)
 
     User.set_bot(bot)
 
-    await FeedsRegistry.initialize(scraper)
+    await FeedsRegistry.initialize()
     await UserRegistry.initialize()
 
     logger.info('Starting news aggregator')
