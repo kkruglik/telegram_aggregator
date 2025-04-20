@@ -61,23 +61,21 @@ class BaseUser:
 
     async def update_users_feeds(self):
         logger.info(f"[User] Updating users feeds {self.id}: {len(self._user_feeds)} feeds")
-        # tasks = [feed.update() for feed in self._user_feeds.values()]
-        # await asyncio.gather(*tasks)
-        # TODO fix this mess
+        tasks = [feed.update() for feed in self._user_feeds.values()]
 
-        for feed in self._user_feeds.values():
-            logger.info(f"Updating feed {feed.channel_id} for user {self.id}")
-            try:
-                await feed.update()
-                logger.info(f'Feed {feed.channel_id} updated successfully')
-            except Exception as e:
-                logger.error(f'Failed to update feed {feed.channel_id} for user {self.id}.')
-                logger.error(e, exc_info=True)
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+
+        for feed, result in zip(self._user_feeds.values(), results):
+            if isinstance(result, Exception):
+                logger.error(f"Failed to update feed {feed.channel_id} for user {self.id}: {str(result)}")
+                logger.error(f"Exception details:", exc_info=result)
+
+        logger.info(f"[User] Completed feed updates for user {self.id}")
 
     async def send_feed_update(self):
         logger.info(f"[User] Send feed update for user {self.id}")
         for feed_name, feed in self._user_feeds.items():
-            todays_feed = f'{feed_name} feed: \n\n'
+            todays_feed = f'{feed.channel_name} feed: \n\n'
             feed_content = feed.content['posts']
             for post_id in feed_content.keys():
                 post_content = feed_content[post_id]
