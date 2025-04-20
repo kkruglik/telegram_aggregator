@@ -1,7 +1,8 @@
-import asyncpg
 import logging
 from contextlib import asynccontextmanager
 from datetime import time
+
+import asyncpg
 
 logger = logging.getLogger('news_aggregator')
 
@@ -31,46 +32,91 @@ class DatabaseRepository:
         """Create the database tables"""
         async with cls.get_connection() as conn:
             await conn.execute("""
-            CREATE TABLE IF NOT EXISTS users (
-            id BIGINT PRIMARY KEY UNIQUE,
-            notification_time TIME,
-            timezone VARCHAR(100) DEFAULT 'EET'
-            )
-            """)
+                               CREATE TABLE IF NOT EXISTS users
+                               (
+                                   id
+                                   BIGINT
+                                   PRIMARY
+                                   KEY
+                                   UNIQUE,
+                                   notification_time
+                                   TIME,
+                                   timezone
+                                   VARCHAR
+                               (
+                                   100
+                               ) DEFAULT 'EET'
+                                   )
+                               """)
 
             await conn.execute("""
-            CREATE TABLE IF NOT EXISTS feeds (
-                id BIGINT PRIMARY KEY UNIQUE,
-                channel_name VARCHAR(100)
-            )
-            """)
+                               CREATE TABLE IF NOT EXISTS feeds
+                               (
+                                   id
+                                   BIGINT
+                                   PRIMARY
+                                   KEY
+                                   UNIQUE,
+                                   channel_name
+                                   VARCHAR
+                               (
+                                   100
+                               )
+                                   )
+                               """)
 
             await conn.execute("""
-            CREATE TABLE IF NOT EXISTS content (
-            post_id BIGINT PRIMARY KEY,
-            text TEXT,
-            summary TEXT,
-            channel_id BIGINT REFERENCES feeds(id) ON DELETE CASCADE
-            )
-            """)
+                               CREATE TABLE IF NOT EXISTS content
+                               (
+                                   post_id
+                                   BIGINT
+                                   PRIMARY
+                                   KEY,
+                                   text
+                                   TEXT,
+                                   summary
+                                   TEXT,
+                                   channel_id
+                                   BIGINT
+                                   REFERENCES
+                                   feeds
+                               (
+                                   id
+                               ) ON DELETE CASCADE
+                                   )
+                               """)
 
             await conn.execute("""
-            CREATE TABLE IF NOT EXISTS users_feeds (
-            user_id BIGINT REFERENCES users(id) ON DELETE CASCADE,
-            feed_id BIGINT REFERENCES feeds(id) ON DELETE CASCADE,
-            CONSTRAINT user_feed_pk PRIMARY KEY (user_id, feed_id)
-            )
-            """)
+                               CREATE TABLE IF NOT EXISTS users_feeds
+                               (
+                                   user_id
+                                   BIGINT
+                                   REFERENCES
+                                   users
+                               (
+                                   id
+                               ) ON DELETE CASCADE,
+                                   feed_id BIGINT REFERENCES feeds
+                               (
+                                   id
+                               )
+                                 ON DELETE CASCADE,
+                                   CONSTRAINT user_feed_pk PRIMARY KEY
+                               (
+                                   user_id,
+                                   feed_id
+                               )
+                                   )
+                               """)
 
     @classmethod
     async def create_user(cls, user_id: int, notification_time: time = None):
         """Create a new user"""
         async with cls.get_connection() as conn:
             return await conn.fetchrow("""
-            INSERT INTO users(id, notification_time) VALUES
-            ($1, $2)
-            RETURNING *
-            """, user_id, notification_time)
+                                       INSERT INTO users(id, notification_time)
+                                       VALUES ($1, $2) RETURNING *
+                                       """, user_id, notification_time)
 
     @classmethod
     async def get_user(cls, user_id):
@@ -86,7 +132,8 @@ class DatabaseRepository:
         """Get all users"""
         async with cls.get_connection() as conn:
             return await conn.fetch(
-                """SELECT * FROM users"""
+                """SELECT *
+                   FROM users"""
             )
 
     @classmethod
@@ -94,7 +141,8 @@ class DatabaseRepository:
         """Get all feeds"""
         async with cls.get_connection() as conn:
             return await conn.fetch(
-                """SELECT * FROM feeds"""
+                """SELECT *
+                   FROM feeds"""
             )
 
     @classmethod
@@ -102,7 +150,8 @@ class DatabaseRepository:
         """Get all users feeds"""
         async with cls.get_connection() as conn:
             return await conn.fetch(
-                """SELECT * FROM users_feeds"""
+                """SELECT *
+                   FROM users_feeds"""
             )
 
     @classmethod
@@ -143,8 +192,9 @@ class DatabaseRepository:
         """Create a new feed"""
         async with cls.get_connection() as conn:
             return await conn.fetchrow("""
-            INSERT INTO feeds(id, channel_name) VALUES ($1, $2);
-            """, channel_id, channel_name)
+                                       INSERT INTO feeds(id, channel_name)
+                                       VALUES ($1, $2);
+                                       """, channel_id, channel_name)
 
     @classmethod
     async def get_feed(cls, channel_id: int):
@@ -166,23 +216,29 @@ class DatabaseRepository:
                     raise ValueError(f"User ID or feed ID not found")
 
                 existing = await conn.fetchrow("""
-                SELECT * FROM users_feeds WHERE user_id = $1 AND feed_id = $2
-                """, user_id, channel_id)
+                                               SELECT *
+                                               FROM users_feeds
+                                               WHERE user_id = $1
+                                                 AND feed_id = $2
+                                               """, user_id, channel_id)
 
                 if existing:
                     logger.info(f"User {user_id} already subscribed to feed {channel_id}")
                     return existing
 
                 return await conn.fetchrow("""
-                INSERT INTO users_feeds(user_id, feed_id) VALUES ($1, $2)
-                RETURNING *
-                """, user_id, channel_id)
+                                           INSERT INTO users_feeds(user_id, feed_id)
+                                           VALUES ($1, $2) RETURNING *
+                                           """, user_id, channel_id)
 
             except asyncpg.UniqueViolationError:
                 logger.info(f"Race condition: User {user_id} was subscribed to feed {channel_id}")
                 return await conn.fetchrow("""
-                SELECT * FROM users_feeds WHERE user_id = $1 AND feed_id = $2
-                """, user_id, channel_id)
+                                           SELECT *
+                                           FROM users_feeds
+                                           WHERE user_id = $1
+                                             AND feed_id = $2
+                                           """, user_id, channel_id)
 
             except Exception as e:
                 logger.error(f"Error subscribing user {user_id} to feed {channel_id}: {e}")
@@ -194,16 +250,22 @@ class DatabaseRepository:
         try:
             async with cls.get_connection() as conn:
                 existing_subscription = await conn.fetchrow("""
-                SELECT user_id FROM users_feeds WHERE user_id = $1 AND feed_id = $2;
-                """, user_id, channel_id)
+                                                            SELECT user_id
+                                                            FROM users_feeds
+                                                            WHERE user_id = $1
+                                                              AND feed_id = $2;
+                                                            """, user_id, channel_id)
 
                 if not existing_subscription:
                     logger.info(f"No subscription found for user {user_id} and feed {channel_id}")
                     return None
 
                 return await conn.execute("""
-                DELETE FROM users_feeds WHERE user_id = $1 AND feed_id = $2;
-                """, user_id, channel_id)
+                                          DELETE
+                                          FROM users_feeds
+                                          WHERE user_id = $1
+                                            AND feed_id = $2;
+                                          """, user_id, channel_id)
 
         except Exception as e:
             logger.error(f"Error unsubscribing user {user_id} from feed {channel_id}: {e}")

@@ -2,11 +2,11 @@ import asyncio
 import logging
 from datetime import timedelta, datetime
 
-from src.tg_aggregator.utils.scraper_utils import get_channel_id
+from tg_aggregator.db.repository import DatabaseRepository
+from tg_aggregator.services.tasks_scheduler import TasksScheduler
+from tg_aggregator.utils.scraper_utils import get_channel_id
 from .feed import TelegramFeed
 from .user import User
-from ..db.repository import DatabaseRepository
-from ..services.tasks_scheduler import TasksScheduler
 
 logger = logging.getLogger('news_aggregator')
 
