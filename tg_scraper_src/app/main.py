@@ -4,9 +4,9 @@ import os
 import uvicorn
 from fastapi import FastAPI, HTTPException
 
-from tg_scraper_src.app.models import ChannelRequest, ChannelMessages, ChannelIDRequest, ChannelIDResponse
-from tg_scraper_src.app.scraper import TelegramScraperQueue
-from tg_scraper_src.app.config import API_ID, API_HASH
+from .models import ChannelRequest, ChannelMessages, ChannelIDRequest, ChannelIDResponse
+from .scraper import TelegramScraperQueue
+from .config import API_ID, API_HASH
 
 logging.basicConfig(
     level=logging.INFO,

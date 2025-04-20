@@ -4,8 +4,8 @@ from datetime import time
 
 from aiogram import Bot
 
-from tg_aggregator.db.repository import DatabaseRepository
-from tg_aggregator.utils.utils import get_timezone_string
+from ..db.repository import DatabaseRepository
+from ..utils.utils import get_timezone_string
 from .feed import TelegramFeed
 
 logger = logging.getLogger('news_aggregator')

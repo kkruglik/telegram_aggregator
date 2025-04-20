@@ -2,7 +2,7 @@ from contextlib import asynccontextmanager
 
 import asyncpg
 
-from tg_aggregator.config import DATABASE_URL
+from ..config import DATABASE_URL
 
 
 @asynccontextmanager

@@ -8,7 +8,7 @@ from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import Message, ReplyKeyboardMarkup, KeyboardButton
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
-from tg_aggregator_src.tg_aggregator.core.registry import UserRegistry, FeedsRegistry
+from ...core.registry import UserRegistry, FeedsRegistry
 
 logger = logging.getLogger('news_aggregator')
 
