@@ -1,5 +1,5 @@
 from datetime import datetime, date
-from typing import Dict, TypedDict, Any, TypeVar, List
+from typing import Dict, TypedDict, TypeVar, List
 
 T = TypeVar("T")
 
