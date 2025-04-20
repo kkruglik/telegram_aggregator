@@ -4,8 +4,8 @@ from asyncio import Semaphore
 from google import genai
 from google.genai import types
 
-from src.tg_aggregator.config import GEMINI_API_KEY
-from src.tg_aggregator.services.prompt import prompt as system_prompt
+from tg_aggregator_src.tg_aggregator.config import GEMINI_API_KEY
+from tg_aggregator_src.tg_aggregator.services.prompt import prompt as system_prompt
 
 logger = logging.getLogger('news_aggregator')
 
