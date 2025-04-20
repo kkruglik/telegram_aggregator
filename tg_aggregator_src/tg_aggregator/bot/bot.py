@@ -3,8 +3,8 @@ import logging
 from aiogram import Bot, Dispatcher
 from aiogram.fsm.storage.memory import MemoryStorage
 
+from tg_aggregator.config import BOT_TOKEN
 from .handlers.commands import router as commands_router
-from ..config import BOT_TOKEN
 
 bot = Bot(token=BOT_TOKEN)
 
