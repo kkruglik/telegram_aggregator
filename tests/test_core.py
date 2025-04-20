@@ -2,8 +2,8 @@
 #
 # import pytest
 #
-# from src.core.registry import UserRegistry, FeedsRegistry
-# from src.core.user import User
+# from tg_aggregator_src.core.registry import UserRegistry, FeedsRegistry
+# from tg_aggregator_src.core.user import User
 #
 #
 # @pytest.fixture
@@ -95,7 +95,7 @@
 #     def test_update_feed(self, clear_registries, monkeypatch):
 #         """Test that updating a feed calls the update method"""
 #         mock_update = MagicMock()
-#         monkeypatch.setattr('src.core.feed.Feed.update', mock_update)
+#         monkeypatch.setattr('tg_aggregator_src.core.feed.Feed.update', mock_update)
 #
 #         FeedsRegistry.create_or_get_feed("CNN")
 #         FeedsRegistry.update_feed("CNN")
@@ -104,7 +104,7 @@
 #     def test_update_all_feeds(self, clear_registries, monkeypatch):
 #         """Test that updating all feeds calls update on each feed"""
 #         mock_update = MagicMock()
-#         monkeypatch.setattr('src.core.feed.Feed.update', mock_update)
+#         monkeypatch.setattr('tg_aggregator_src.core.feed.Feed.update', mock_update)
 #
 #         FeedsRegistry.create_or_get_feed("CNN")
 #         FeedsRegistry.create_or_get_feed("BBC")
