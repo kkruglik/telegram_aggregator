@@ -1,8 +1,14 @@
 import aiohttp
+from ..config import SCRAPER_URL
 
 
-async def get_channel_id(feed_name: str, service_url: str = "http://localhost:8000") -> tuple[int, str]:
+async def get_channel_id(feed_name: str, service_url: str = None) -> tuple[int, str]:
     """Make a simple request to get channel ID from the scraper service"""
+    service_url = service_url or SCRAPER_URL
+
+    if service_url is None:
+        raise ValueError("No service urk provided")
+
     async with aiohttp.ClientSession() as session:
         url = f"{service_url}/channel_id"
         payload = {"channel": feed_name}
@@ -16,8 +22,13 @@ async def get_channel_id(feed_name: str, service_url: str = "http://localhost:80
             return data["channel_id"], data.get("username", "")
 
 
-async def get_today_messages(channel_id: int, service_url: str = "http://localhost:8000"):
+async def get_today_messages(channel_id: int, service_url: str = None):
     """Get today's messages for a channel from the scraper service"""
+    service_url = service_url or SCRAPER_URL
+
+    if service_url is None:
+        raise ValueError("No service urk provided")
+
     async with aiohttp.ClientSession() as session:
         url = f"{service_url}/messages"
         payload = {"channel_id": channel_id}
