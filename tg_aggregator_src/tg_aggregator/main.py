@@ -22,6 +22,7 @@ logging.config.dictConfig(config)
 # TODO add a documentation about bot logic, for now its really poorly documented
 # TODO should i use microservices for summarization and scraping?
 # TODO Telegram server says - Bad Request: message is too long
+# TODO update system of clearing feed posts, for now i am just deleting send posts from feed
 
 
 async def main():
