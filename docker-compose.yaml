@@ -6,19 +6,74 @@ services:
     container_name: news_aggregator_db
     restart: unless-stopped
     environment:
-      POSTGRES_DB: news_aggregator
-      POSTGRES_USER: newsapp
-      POSTGRES_PASSWORD: your_strong_password_here
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
     volumes:
       - postgres_data:/var/lib/postgresql/data
-#      - ./init-scripts:/docker-entrypoint-initdb.d
+      - ./init_db.sql:/docker-entrypoint-initdb.d/init.sql
     ports:
       - "5432:5432"
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U newsapp -d news_aggregator" ]
+      test: [ "CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}" ]
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - tg_network
+
+  scraper:
+    build:
+      context: .
+      dockerfile: tg_scraper_src/Dockerfile
+    container_name: tg_scraper
+    restart: unless-stopped
+    environment:
+      - API_ID=${API_ID}
+      - API_HASH=${API_HASH}
+      - TELEGRAM_SESSION_NAME=telegram_scraper
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./logs:/app/logs
+      - ./tg_scraper_src:/app/tg_scraper_src
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - tg_network
+
+  aggregator:
+    build:
+      context: .
+      dockerfile: tg_aggregator_src/Dockerfile
+    container_name: tg_aggregator
+    restart: unless-stopped
+    environment:
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=${DB_NAME}
+      - BOT_TOKEN=${BOT_TOKEN}
+      - API_ID=${API_ID}
+      - API_HASH=${API_HASH}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - SCRAPER_URL=http://scraper:8000
+    volumes:
+      - ./logs:/app/logs
+      - ./tg_aggregator_src:/app/tg_aggregator_src
+    depends_on:
+      postgres:
+        condition: service_healthy
+      scraper:
+        condition: service_started
+    networks:
+      - tg_network
+
+networks:
+  tg_network:
+    driver: bridge
 
 volumes:
   postgres_data:
