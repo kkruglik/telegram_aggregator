@@ -27,8 +27,8 @@ class RegistrationStates(StatesGroup):
 
 def create_time_selection_keyboard():
     builder = InlineKeyboardBuilder()
-    hours = ["06:00", "07:00", "08:00", "09:45", "10:00", "11:40",
-             "12:00", "14:00", "15:14", "18:15", "20:30", "22:00"]
+    hours = ["06:00", "07:00", "08:00", "09:00", "10:00", "11:40",
+             "12:00", "14:00", "15:00", "18:00", "20:00", "22:00"]
 
     for hour in hours:
         builder.button(text=hour, callback_data=f"time:{hour}")
@@ -142,7 +142,7 @@ async def process_notification_time(callback: types.CallbackQuery, state: FSMCon
 
 @router.message(Command('subscribe'))
 async def subscribe(message: Message, state: FSMContext):
-    await message.answer("Send channel name.")
+    await message.answer("Send channel name in format @channel_name")
     await state.set_state(FeedStates.waiting_for_feed_name)
 
 
@@ -152,7 +152,7 @@ async def process_feed_name(message: Message, state: FSMContext):
     feed_name = message.text.strip()
 
     if not feed_name:
-        await message.answer("Send channel name.")
+        await message.answer("Send channel name in format @channel_name")
         return
 
     user_id = message.from_user.id
@@ -179,12 +179,12 @@ async def cmd_list(message: Message):
 
         if feeds:
             feed_list = "\n".join([f"• {feed.channel_name}" for feed in feeds.values()])
-            await message.answer(f"Ваши подписки:\n\n{feed_list}")
+            await message.answer(f"Your subscriptions:\n\n{feed_list}")
         else:
             await message.answer(
-                "У вас нет активных подписок. Используйте комманду /subscribe чтобы добавить подписки.")
+                "You dont have any subscriptions. Type /subscribe to add some.")
     except KeyError:
-        await message.answer("Введите команду /start чтобы начать пользоваться ботом.")
+        await message.answer("Type /start to start the bot.")
 
 
 @router.message(Command("unsubscribe"))
@@ -249,7 +249,5 @@ async def echo(message: Message):
         "/subscribe - Subscribe to a feed\n"
         "/list - List your subscribed feeds\n"
         "/unsubscribe - Unsubscribe from a feed\n"
-        "/update - Update your feeds\n"
-        "/summary - Get an AI summary of today's news\n"
-        "/todays_feed - Get today's news\n"
+        "notification_time - Change your notification time\n"
     )
