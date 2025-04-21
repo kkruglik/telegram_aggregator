@@ -74,17 +74,31 @@ class BaseUser:
 
     async def send_feed_update(self):
         logger.info(f"[User] Send feed update for user {self.id}")
+        MESSAGE_LIMIT = 4096
         for feed_name, feed in self._user_feeds.items():
+
+            if not feed.content['posts']:
+                logger.info(f"Feed {feed_name} is empty, skipping")
+                continue
+
             todays_feed = f'{feed.channel_name} feed: \n\n'
             feed_content = feed.content['posts']
-            for post_id in feed_content.keys():
+            post_ids = list(feed_content.keys())
+            for post_id in post_ids:
                 post_content = feed_content[post_id]
                 todays_feed += f"{post_content['summary']} \n{post_content['url']}\n\n---------\n\n"
+                del feed_content[post_id]
 
-            await self._bot.send_message(
-                chat_id=self.id,
-                text=todays_feed,
-            )
+            if len(todays_feed) > MESSAGE_LIMIT:
+                for i in range(0, len(todays_feed), MESSAGE_LIMIT):
+                    todays_feed_part = todays_feed[i:i+MESSAGE_LIMIT]
+                    await self._bot.send_message(chat_id=self.id, text=todays_feed_part)
+
+            else:
+                await self._bot.send_message(
+                    chat_id=self.id,
+                    text=todays_feed,
+                )
 
     async def save_user_to_database(self):
         """Save current user state to database"""
