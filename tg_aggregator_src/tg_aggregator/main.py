@@ -1,16 +1,15 @@
 import asyncio
 import logging.config
 
-from .bot.bot import start_bot, bot
-from .config import DATABASE_URL
+from .bot.bot import init_bot
+from .config import BOT_TOKEN, DATABASE_URL
 from .core.registry import UserRegistry, FeedsRegistry
 from .core.user import User
 from .db.repository import DatabaseRepository
 from .utils.utils import load_yaml
 
 logger = logging.getLogger('news_aggregator')
-config = load_yaml('config/logger.yaml')
-logging.config.dictConfig(config)
+logging.config.dictConfig(load_yaml('config/logger.yaml'))
 
 
 # TODO states of user are saved only locally with tg library
@@ -26,7 +25,10 @@ logging.config.dictConfig(config)
 
 
 async def main():
+
     await DatabaseRepository.initialize(DATABASE_URL)
+
+    bot, dp = init_bot(BOT_TOKEN)
 
     User.set_bot(bot)
 
@@ -34,8 +36,8 @@ async def main():
     await UserRegistry.initialize()
 
     logger.info('Starting news aggregator')
-    await start_bot()
 
+    await dp.start_polling(bot)
 
 if __name__ == '__main__':
     asyncio.run(main())
