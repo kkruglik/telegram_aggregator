@@ -7,10 +7,9 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONPATH=/app
 
 RUN pip install --upgrade pip && \
-    pip install fastapi uvicorn telethon python-dotenv
+    pip install fastapi==0.115.1 uvicorn==0.34.2 telethon==1.39.0 python-dotenv==1.1.0 google-cloud-secret-manager==2.23.3
 
 COPY tg_scraper_src/ ./tg_scraper_src/
-COPY telegram_scraper.session ./telegram_scraper.session
 
 
 RUN mkdir -p logs
