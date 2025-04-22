@@ -4,15 +4,13 @@ from aiogram import Bot, Dispatcher
 from aiogram.fsm.storage.memory import MemoryStorage
 
 from .handlers.commands import router as commands_router
-from ..config import BOT_TOKEN
-
-bot = Bot(token=BOT_TOKEN)
 
 logger = logging.getLogger('news_aggregator')
 
 
-async def start_bot():
+def init_bot(bot_token: str):
+    bot = Bot(token=bot_token)
     storage = MemoryStorage()
     dp = Dispatcher(storage=storage)
     dp.include_routers(commands_router)
-    await dp.start_polling(bot)
+    return bot, dp
