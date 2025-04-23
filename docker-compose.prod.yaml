@@ -1,0 +1,68 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: news_aggregator_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    # No ports exposed to host
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - tg_network
+    user: postgres  # Run as non-root
+
+  scraper:
+    build:
+      context: .
+      dockerfile: tg_scraper_src/Dockerfile.prod
+    container_name: tg_scraper
+    restart: unless-stopped
+    environment:
+      - GCP_PROJECT_ID=${GCP_PROJECT_ID}
+    volumes:
+      - ./logs:/app/logs
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - tg_network
+    user: nobody  # Run as non-root
+
+  aggregator:
+    build:
+      context: .
+      dockerfile: tg_aggregator_src/Dockerfile.prod
+    container_name: tg_aggregator
+    restart: unless-stopped
+    environment:
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - GCP_PROJECT_ID=${GCP_PROJECT_ID}
+      - SCRAPER_URL=http://scraper:8000
+    volumes:
+      - ./logs:/app/logs
+    depends_on:
+      postgres:
+        condition: service_healthy
+      scraper:
+        condition: service_started
+    networks:
+      - tg_network
+    user: nobody  # Run as non-root
+
+networks:
+  tg_network:
+    driver: bridge
+
+volumes:
+  postgres_data:
