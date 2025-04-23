@@ -43,6 +43,8 @@ services:
     restart: unless-stopped
     environment:
       - DB_HOST=postgres
+      - POSTGRES_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
       - DB_PORT=5432
       - GCP_PROJECT_ID=${GCP_PROJECT_ID}
       - SCRAPER_URL=http://scraper:8000
