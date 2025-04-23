@@ -24,7 +24,7 @@ services:
   scraper:
     build:
       context: .
-      dockerfile: tg_scraper_src/Dockerfile.prod
+      dockerfile: tg_scraper_src/Dockerfile
     container_name: tg_scraper
     restart: unless-stopped
     environment:
@@ -41,7 +41,7 @@ services:
   aggregator:
     build:
       context: .
-      dockerfile: tg_aggregator_src/Dockerfile.prod
+      dockerfile: tg_aggregator_src/Dockerfile
     container_name: tg_aggregator
     restart: unless-stopped
     environment:
