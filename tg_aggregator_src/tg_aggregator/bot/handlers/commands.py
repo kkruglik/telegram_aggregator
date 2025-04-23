@@ -249,5 +249,5 @@ async def echo(message: Message):
         "/subscribe - Subscribe to a feed\n"
         "/list - List your subscribed feeds\n"
         "/unsubscribe - Unsubscribe from a feed\n"
-        "notification_time - Change your notification time\n"
+        "/notification_time - Change your notification time\n"
     )
