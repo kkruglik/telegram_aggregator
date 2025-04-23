@@ -11,7 +11,6 @@ services:
       POSTGRES_PASSWORD: ${DB_PASSWORD}
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./init_db.sql:/docker-entrypoint-initdb.d/init.sql
     ports:
       - "5432:5432"
     healthcheck:
@@ -27,16 +26,18 @@ services:
       context: .
       dockerfile: tg_scraper_src/Dockerfile
     container_name: tg_scraper
-    restart: unless-stopped
     environment:
       - API_ID=${API_ID}
       - API_HASH=${API_HASH}
-      - TELEGRAM_SESSION_NAME=telegram_scraper
+      - TELEGRAM_SESSION_NAME=${TELEGRAM_SESSION_NAME}
+      - GCP_PROJECT_ID=${GCP_PROJECT_ID}
+      - GOOGLE_APPLICATION_CREDENTIALS=/root/.config/gcloud/application_default_credentials.json
     ports:
       - "8000:8000"
     volumes:
       - ./logs:/app/logs
       - ./tg_scraper_src:/app/tg_scraper_src
+      - ~/.config/gcloud:/root/.config/gcloud
     depends_on:
       postgres:
         condition: service_healthy
@@ -48,7 +49,6 @@ services:
       context: .
       dockerfile: tg_aggregator_src/Dockerfile
     container_name: tg_aggregator
-    restart: unless-stopped
     environment:
       - DB_USER=${DB_USER}
       - DB_PASSWORD=${DB_PASSWORD}
@@ -60,9 +60,12 @@ services:
       - API_HASH=${API_HASH}
       - GEMINI_API_KEY=${GEMINI_API_KEY}
       - SCRAPER_URL=http://scraper:8000
+      - GCP_PROJECT_ID=${GCP_PROJECT_ID}
+      - GOOGLE_APPLICATION_CREDENTIALS=/root/.config/gcloud/application_default_credentials.json
     volumes:
       - ./logs:/app/logs
       - ./tg_aggregator_src:/app/tg_aggregator_src
+      - ~/.config/gcloud:/root/.config/gcloud
     depends_on:
       postgres:
         condition: service_healthy
