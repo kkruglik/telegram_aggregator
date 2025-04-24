@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from telethon import TelegramClient
 
@@ -94,19 +94,21 @@ class TelegramScraperQueue:
         """Get messages from the last 24 hours"""
         logger.info(f"Getting messages from last 24 hours for channel {channel_id}")
 
-        cutoff_time = datetime.now(tz=None) - timedelta(hours=24)
+        # Make cutoff_time timezone-aware by using UTC
+        cutoff_time = datetime.now(tz=timezone.utc) - timedelta(hours=24)
 
         messages = {
-            'meta': {'channel_id': channel_id, 'date': datetime.now(tz=None)},
+            'meta': {'channel_id': channel_id, 'date': datetime.now(tz=timezone.utc)},
             'messages': [],
         }
 
         try:
             async for message in client.iter_messages(
                     entity=channel_id,
-                    limit=100,  # Reasonable limit to prevent excessive data fetching
-                    offset_date=datetime.now(tz=None)
+                    limit=100,
+                    offset_date=datetime.now(tz=timezone.utc)
             ):
+                # Now both dates have timezone info and can be compared
                 if message.date < cutoff_time:
                     break
 
