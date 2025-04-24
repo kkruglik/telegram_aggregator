@@ -20,7 +20,7 @@ class ChannelMessages(BaseModel):
 
 
 class ChannelRequest(BaseModel):
-    channel_id: int
+    channel_id: str
 
 
 class ChannelIDRequest(BaseModel):
