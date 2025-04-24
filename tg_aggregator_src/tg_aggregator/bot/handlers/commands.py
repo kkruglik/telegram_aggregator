@@ -27,8 +27,8 @@ class RegistrationStates(StatesGroup):
 
 def create_time_selection_keyboard():
     builder = InlineKeyboardBuilder()
-    hours = ["06:00", "07:00", "08:00", "09:00", "10:00", "11:40",
-             "12:00", "14:00", "15:00", "18:00", "20:00", "22:00"]
+    hours = ["06:00", "07:00", "08:00", "09:00", "10:00", "11:00",
+             "12:00", "14:00", "16:00", "18:00", "20:00", "22:00"]
 
     for hour in hours:
         builder.button(text=hour, callback_data=f"time:{hour}")
