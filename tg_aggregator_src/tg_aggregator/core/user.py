@@ -92,7 +92,7 @@ class BaseUser:
             if len(todays_feed) > MESSAGE_LIMIT:
                 for i in range(0, len(todays_feed), MESSAGE_LIMIT):
                     todays_feed_part = todays_feed[i:i + MESSAGE_LIMIT]
-                    await self._bot.send_message(chat_id=self.id, text=todays_feed_part, parse_mode='MarkdownV2')
+                    await self._bot.send_message(chat_id=self.id, text=todays_feed_part)
                     await asyncio.sleep(1)
 
             else:
