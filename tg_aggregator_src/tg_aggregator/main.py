@@ -22,6 +22,8 @@ logging.config.dictConfig(load_yaml('config/aggregator_logger.yaml'))
 # TODO should i use microservices for summarization and scraping?
 # TODO Telegram server says - Bad Request: message is too long
 # TODO update system of clearing feed posts, for now i am just deleting send posts from feed
+# TODO add loading summary to database, and when updating feed, check if summary is already there and skip it
+# TODO add post from scraper to database, and when updating feed, check if post is already there and skip it
 
 
 async def main():
