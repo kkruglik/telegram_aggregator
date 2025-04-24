@@ -84,24 +84,27 @@ class UserRegistry:
         user = cls._users[user_id]
 
         notification_time = user.notification_time
-        today = datetime.today().date()
-        datetime_obj = datetime.combine(today, notification_time)
-        update_datetime = datetime_obj - timedelta(minutes=1)
-        update_time = update_datetime.time()
+        user_timezone = user.timezone
+        update_minute = (notification_time.minute - 5) % 60
+        update_hour = notification_time.hour if notification_time.minute > 0 else (notification_time.hour - 1) % 24
 
         cls._scheduler.add_job(
             func=user.update_users_feeds,
             job_id=f"{user.id}_update_users_feeds",
-            cron=f"{update_time.minute} {update_time.hour} * * *",
+            cron=f"{update_minute} {update_hour} * * *",
+            timezone_name=user_timezone,
         )
 
         cls._scheduler.add_job(
             func=user.send_feed_update,
             job_id=f"{user.id}_send_feed_update",
             cron=f"{notification_time.minute} {notification_time.hour} * * *",
+            timezone_name=user_timezone,
         )
 
-        logger.info(f"[UserRegistry] Scheduled notifications for user {user} at {update_time}")
+        logger.info(f"[UserRegistry] Scheduled notifications for user {user} at {notification_time.hour}:{notification_time.minute}:{user_timezone}")
+        logger.info(f"[UserRegistry] Scheduled feed update for user {user} at {update_hour}:{update_minute}:{user_timezone}")
+
 
 
 class FeedsRegistry:
