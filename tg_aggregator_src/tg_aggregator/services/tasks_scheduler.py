@@ -3,6 +3,7 @@ import logging
 from typing import Callable, Dict, Any, Union, Coroutine
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from pytz import timezone, UTC
 
 logger = logging.getLogger('news_aggregator')
 
@@ -17,6 +18,7 @@ class TasksScheduler:
                 job_id: str,
                 interval_minutes: int = None,
                 cron: str = None,
+                timezone_name: str = None,
                 **kwargs) -> str:
         """
         Add a job to the scheduler
@@ -55,12 +57,15 @@ class TasksScheduler:
 
             job_func = run_function
 
+        task_tz = timezone(timezone_name) if timezone_name else UTC
+
         if cron:
             job = self.scheduler.add_job(
                 job_func,
                 'cron',
                 id=job_id,
                 replace_existing=True,
+                timezone=task_tz,
                 **self._parse_cron(cron)
             )
         elif interval_minutes:
@@ -69,6 +74,7 @@ class TasksScheduler:
                 'interval',
                 minutes=interval_minutes,
                 id=job_id,
+                timezone=task_tz,
                 replace_existing=True
             )
         else:
