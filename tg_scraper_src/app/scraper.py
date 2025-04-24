@@ -91,24 +91,35 @@ class TelegramScraperQueue:
 
     @staticmethod
     async def _get_today_messages(client: TelegramClient, channel_id: int):
-        """The actual implementation of getting today's messages"""
-        logger.info(f"Getting today messages for channel {channel_id}")
+        """Get messages from the last 24 hours"""
+        logger.info(f"Getting messages from last 24 hours for channel {channel_id}")
 
-        break_date = datetime.now(tz=None).date() - timedelta(days=1)
+        cutoff_time = datetime.now(tz=None) - timedelta(hours=24)
+
         messages = {
             'meta': {'channel_id': channel_id, 'date': datetime.now(tz=None)},
             'messages': [],
         }
 
-        async for message in client.iter_messages(channel_id):
-            if message.date.date() < break_date:
-                break
-            message_text = message.text
-            if message_text is None or message_text == '':
-                continue
+        try:
+            async for message in client.iter_messages(
+                    entity=channel_id,
+                    limit=100,  # Reasonable limit to prevent excessive data fetching
+                    offset_date=datetime.now(tz=None)
+            ):
+                if message.date < cutoff_time:
+                    break
 
-            messages['messages'].append({'id': message.id, 'text': message_text})
-        return messages
+                message_text = message.text
+                if message_text is None or message_text == '':
+                    continue
+
+                messages['messages'].append({'id': message.id, 'text': message_text})
+
+            return messages
+        except Exception as e:
+            logger.error(f"Error fetching messages for channel {channel_id}: {str(e)}")
+            raise
 
     @staticmethod
     async def _get_channel_id(client: TelegramClient, channel: str):
