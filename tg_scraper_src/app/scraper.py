@@ -43,6 +43,20 @@ class TelegramScraperQueue:
     async def _process_queue(self):
         """Worker that processes queued tasks"""
         while self.running:
+            if not self.client.is_connected():
+                logger.warning("TelegramScraperQueue client not connected. Reconnecting...")
+                try:
+                    await asyncio.wait_for(self.client.connect(), timeout=10)
+                    logger.info("Reconnection successful")
+                except asyncio.TimeoutError:
+                    logger.error("Reconnection timed out after 10 seconds")
+                    await asyncio.sleep(5)
+                    continue
+                except Exception as e:
+                    logger.error(f"Reconnection failed: {str(e)}")
+                    await asyncio.sleep(5)
+                    continue
+
             try:
                 task_func, args, kwargs, future = await self.queue.get()
                 try:
