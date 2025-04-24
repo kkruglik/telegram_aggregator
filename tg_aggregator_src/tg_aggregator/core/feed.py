@@ -24,7 +24,7 @@ class TelegramFeed:
 
     async def _get_todays_posts(self):
         try:
-            messages = await get_today_messages(self.channel_id)
+            messages = await get_today_messages(self.channel_name)
             logger.info(f"[BaseFeed] {len(messages)} messages received")
             updated_at = datetime.now()
             for message in messages['messages']:
