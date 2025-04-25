@@ -10,7 +10,7 @@ class Message(BaseModel):
 
 
 class ChannelMeta(BaseModel):
-    channel_id: int
+    channel_id: str
     date: datetime
 
 
@@ -19,8 +19,12 @@ class ChannelMessages(BaseModel):
     messages: List[Message]
 
 
-class ChannelRequest(BaseModel):
-    channel_id: str
+class ChannelRequestByID(BaseModel):
+    channel_id: int
+
+
+class ChannelRequestByName(BaseModel):
+    channel_name: str
 
 
 class ChannelIDRequest(BaseModel):
