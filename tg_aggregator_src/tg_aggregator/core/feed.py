@@ -4,7 +4,7 @@ from datetime import datetime
 
 from ..services.summarizer import generate_summary
 from ..data_types import FeedContent, Post
-from ..utils.scraper_utils import get_today_messages
+from ..utils.scraper_utils import get_today_messages_by_channel_id, get_today_messages_by_channel_name
 
 logger = logging.getLogger('news_aggregator')
 
@@ -24,7 +24,7 @@ class TelegramFeed:
 
     async def _get_todays_posts(self):
         try:
-            messages = await get_today_messages(self.channel_name)
+            messages = await get_today_messages_by_channel_name(self.channel_name)
             logger.info(f"[BaseFeed] {len(messages)} messages received")
             updated_at = datetime.now()
             for message in messages['messages']:
