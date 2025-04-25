@@ -81,30 +81,36 @@ class TelegramScraperQueue:
         await self.queue.put((task_func, args, kwargs, future))
         return await future
 
-    async def get_today_messages(self, channel_id: int):
+    async def get_today_messages_by_id(self, channel_id: int):
         """Queue a task to get today's messages"""
-        return await self._enqueue_task(self._get_today_messages, channel_id)
+        return await self._enqueue_task(self._get_today_messages, channel_id=channel_id)
+
+    async def get_today_messages_by_name(self, channel_name: str):
+        """Queue a task to get today's messages"""
+        return await self._enqueue_task(self._get_today_messages, channel_name=channel_name)
 
     async def get_channel_id(self, channel: str):
         """Queue a task to get a channel ID"""
         return await self._enqueue_task(self._get_channel_id, channel)
 
     @staticmethod
-    async def _get_today_messages(client: TelegramClient, channel_id: int):
+    async def _get_today_messages(client: TelegramClient, channel_id: int = None, channel_name: str = None):
         """Get messages from the last 24 hours"""
+        channel_entity = channel_name or channel_id
+
         logger.info(f"Getting messages from last 24 hours for channel {channel_id}")
 
         # Make cutoff_time timezone-aware by using UTC
         cutoff_time = datetime.now(tz=timezone.utc) - timedelta(hours=24)
 
         messages = {
-            'meta': {'channel_id': channel_id, 'date': datetime.now(tz=timezone.utc)},
+            'meta': {'channel_id': channel_entity, 'date': datetime.now(tz=timezone.utc)},
             'messages': [],
         }
 
         try:
             async for message in client.iter_messages(
-                    entity=channel_id,
+                    entity=channel_entity,
                     limit=100,
                     offset_date=datetime.now(tz=timezone.utc)
             ):
