@@ -5,13 +5,12 @@ import uvicorn
 from fastapi import FastAPI, HTTPException
 
 from .config import API_ID, API_HASH
-from .models import ChannelRequest, ChannelMessages, ChannelIDRequest, ChannelIDResponse
+from .models import ChannelRequestByName, ChannelRequestByID, ChannelMessages, ChannelIDRequest, ChannelIDResponse
 from .scraper import TelegramScraperQueue
 from .utils import load_yaml
 
 logger = logging.getLogger('telegram_scraper_service')
 logging.config.dictConfig(load_yaml('config/scraper_logger.yaml'))
-
 
 app = FastAPI(
     title="Telegram Scraper Service",
@@ -28,11 +27,22 @@ async def startup_event():
     await telegram_queue.start()
 
 
-@app.post("/messages", response_model=ChannelMessages)
-async def get_messages(request: ChannelRequest):
+@app.post("/messages_by_id", response_model=ChannelMessages)
+async def get_messages(request: ChannelRequestByID):
     """Get today's messages from a Telegram channel"""
     try:
-        result = await telegram_queue.get_today_messages(request.channel_id)
+        result = await telegram_queue.get_today_messages_by_id(request.channel_id)
+        return result
+    except Exception as e:
+        logger.error(f"Error getting messages: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Failed to get messages: {str(e)}")
+
+
+@app.post("/messages_by_name", response_model=ChannelMessages)
+async def get_messages(request: ChannelRequestByName):
+    """Get today's messages from a Telegram channel"""
+    try:
+        result = await telegram_queue.get_today_messages_by_name(request.channel_name)
         return result
     except Exception as e:
         logger.error(f"Error getting messages: {str(e)}", exc_info=True)
