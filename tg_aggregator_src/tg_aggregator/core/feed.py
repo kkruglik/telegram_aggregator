@@ -5,6 +5,7 @@ from datetime import datetime
 from ..services.summarizer import generate_summary
 from ..data_types import FeedContent, Post
 from ..utils.scraper_utils import get_today_messages_by_channel_id, get_today_messages_by_channel_name
+from ..db.repository import DatabaseRepository
 
 logger = logging.getLogger('news_aggregator')
 
@@ -35,6 +36,7 @@ class TelegramFeed:
                     message_data['channel_id'] = self.channel_id
                     message_data['url'] = self._create_post_url(message['id'])
                     message_data['summary'] = None
+                    message_data['id'] = message['id']
 
                     self.content['posts'][message['id']] = message_data
 
@@ -48,6 +50,9 @@ class TelegramFeed:
         logger.info(f"[TelegramFeed] Updating feed {self.channel_id} from channel {self.channel_id}")
         await self._get_todays_posts()
         await self._summarize_content()
+        await self._add_content_to_db()
+        self._clear_cache()
+        logger.info(f"[TelegramFeed] Feed {self.channel_id} updated.")
 
     async def _summarize_content(self):
         async def summarize_wrapper(post_id, text):
@@ -72,3 +77,13 @@ class TelegramFeed:
 
     def _create_post_url(self, message_id: int):
         return f"https://t.me/{self.channel_name}/{message_id}"
+
+    async def _add_content_to_db(self):
+        for post_id, post_data in self.content['posts'].items():
+            logger.info(f"[TelegramFeed] Adding post {post_id} to database")
+            await DatabaseRepository.add_post_to_db(post_id, post_data['text'], self.channel_id, post_data['summary'])
+
+    def _clear_cache(self):
+        """Clear cached posts and reset last updated timestamp"""
+        self.content['posts'] = {}
+        logger.info(f"[TelegramFeed] Cache cleared for channel {self.channel_id}")
