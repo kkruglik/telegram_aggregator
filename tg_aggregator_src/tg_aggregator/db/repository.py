@@ -270,3 +270,52 @@ class DatabaseRepository:
         except Exception as e:
             logger.error(f"Error unsubscribing user {user_id} from feed {channel_id}: {e}")
             raise
+
+    @classmethod
+    async def add_post_to_db(cls, post_id: int, text: str, channel_id: int, summary: str = None):
+        """Add a new post to the content table"""
+        try:
+            async with cls.get_connection() as conn:
+                result = await conn.fetchrow("""
+                                             INSERT INTO content(post_id, text, summary, channel_id)
+                                             VALUES ($1, $2, $3, $4) RETURNING *
+                                             """, post_id, text, summary, channel_id)
+                logger.info(f"Successfully added post {post_id} from channel {channel_id}")
+                return result
+        except Exception as e:
+            logger.error(f"Error adding post {post_id} from channel {channel_id}: {e}")
+            raise
+
+    @classmethod
+    async def update_post_summary(cls, post_id: int, summary: str):
+        """Update summary for existing post in the content table"""
+        try:
+            async with cls.get_connection() as conn:
+                result = await conn.fetchrow("""
+                                             UPDATE content
+                                             SET summary = $2
+                                             WHERE post_id = $1 RETURNING *
+                                             """, post_id, summary)
+                if result:
+                    logger.info(f"Successfully updated summary for post {post_id}")
+                else:
+                    logger.warning(f"No post found with ID {post_id}")
+                return result
+        except Exception as e:
+            logger.error(f"Error updating summary for post {post_id}: {e}")
+            raise
+
+    @classmethod
+    async def has_summary(cls, post_id: int) -> bool:
+        """Check if post exists and has a non-empty summary"""
+        try:
+            async with cls.get_connection() as conn:
+                result = await conn.fetchrow("""
+                                             SELECT summary
+                                             FROM content
+                                             WHERE post_id = $1
+                                             """, post_id)
+                return bool(result and result['summary'])
+        except Exception as e:
+            logger.error(f"Error checking summary for post {post_id}: {e}")
+            raise
