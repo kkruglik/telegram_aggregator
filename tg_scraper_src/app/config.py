@@ -1,94 +1,151 @@
 import logging
 import os
+from dataclasses import dataclass, field
+from functools import cached_property
 from pathlib import Path
+from typing import Dict, Optional, Any
 
 from dotenv import load_dotenv
 from google.cloud import secretmanager
 
-logger = logging.getLogger(__name__)
-
-API_ID = None
-API_HASH = None
-GCP_PROJECT_ID = os.getenv('GCP_PROJECT_ID')
+logger = logging.getLogger('telegram_scraper_service')
 
 
-def get_secret(project_id, secret_id, version_id="latest"):
-    """
-    Accesses a secret version from Google Secret Manager.
-    """
-    try:
-        client = secretmanager.SecretManagerServiceClient()
-        name = f"projects/{project_id}/secrets/{secret_id}/versions/{version_id}"
-        response = client.access_secret_version(request={"name": name})
-        return response.payload.data.decode("UTF-8")
-    except Exception as e:
-        logger.error(f"Error accessing secret {secret_id}: {e}")
-        return None
+@dataclass
+class BaseConfig:
+    """Base configuration class with common functionality."""
+
+    def __post_init__(self):
+        """Load configuration after initialization."""
+        self._load_config()
+
+    @cached_property
+    def base_dir(self) -> Path:
+        """Get the base directory for the application."""
+        return Path(__file__).resolve().parents[2]
+
+    def _load_config(self) -> None:
+        """Load configuration from environment variables."""
+        env_path = self.base_dir / '.env'
+        load_dotenv(dotenv_path=env_path)
+        self._load_from_env()
+
+    def _load_from_env(self) -> None:
+        """Load configuration from environment variables."""
+        for attr_name in self.__annotations__:
+            if attr_name.startswith('_') or attr_name == 'base_dir':
+                continue
+
+            env_name = attr_name.upper()
+            env_value = os.getenv(env_name)
+
+            if env_value is not None:
+                setattr(self, attr_name, env_value)
+
+    def as_dict(self) -> Dict[str, Any]:
+        """Return configuration as dictionary."""
+        result = {}
+        for attr_name in self.__annotations__:
+            if attr_name.startswith('_') or attr_name == 'base_dir':
+                continue
+            result[attr_name.upper()] = getattr(self, attr_name)
+        return result
 
 
-def get_secret_file(project_id, secret_id, file_path, version_id="latest"):
-    """
-    Fetches a binary file from Secret Manager and saves it to disk.
-    """
-    try:
-        from google.cloud import secretmanager
-        client = secretmanager.SecretManagerServiceClient()
-        name = f"projects/{project_id}/secrets/{secret_id}/versions/{version_id}"
-        response = client.access_secret_version(request={"name": name})
+@dataclass
+class SecretConfig(BaseConfig):
+    """Configuration class for sensitive configuration items."""
 
-        # Write binary data directly to file
-        with open(file_path, 'wb') as file:
-            file.write(response.payload.data)
+    # Secret configuration values with defaults
+    db_password: Optional[str] = field(default=None)
+    bot_token: Optional[str] = field(default=None)
+    gemini_api_key: Optional[str] = field(default=None)
+    api_id: Optional[str] = field(default=None)
+    api_hash: Optional[str] = field(default=None)
+    gcp_project_id: Optional[str] = field(default=None)
 
-        logger.info(f"Secret file saved to {file_path}")
-        return True
-    except Exception as e:
-        logger.error(f"Error accessing secret file {secret_id}: {e}")
-        return False
+    def __post_init__(self):
+        """Initialize the secret configuration."""
+        super().__post_init__()
 
+        # After loading from env, try to load missing values from secrets
+        if self.gcp_project_id:
+            logger.info("GCP_PROJECT_ID is set. Loading missing secrets from Secret Manager")
+            self._load_missing_from_secret_manager()
 
-def load_config():
-    """Load configuration and set module-level variables"""
-    global API_ID, API_HASH, GCP_PROJECT_ID
+        logger.info("Secret configuration loaded")
 
-    # Load from environment variables first
-    BASE_DIR = Path(__file__).resolve().parents[2]
-    env_path = BASE_DIR / '.env'
-    load_dotenv(dotenv_path=env_path)
+    def _get_secret(self, secret_id: str, version_id: str = "latest") -> Optional[str]:
+        """Get secret from Google Secret Manager."""
+        try:
+            client = secretmanager.SecretManagerServiceClient()
+            name = f"projects/{self.gcp_project_id}/secrets/{secret_id}/versions/{version_id}"
+            response = client.access_secret_version(request={"name": name})
+            return response.payload.data.decode("UTF-8")
+        except Exception as e:
+            logger.error(f"Error accessing secret {secret_id}: {e}")
+            return None
 
-    if GCP_PROJECT_ID:
-        logger.info(f"GCP_PROJECT_ID is set. Attempting to load secrets from Secret Manager")
+    def _get_secret_file(self, secret_id: str, file_path: str, version_id: str = "latest") -> bool:
+        """Fetch a binary file from Secret Manager and save it to disk."""
+        try:
+            client = secretmanager.SecretManagerServiceClient()
+            name = f"projects/{self.gcp_project_id}/secrets/{secret_id}/versions/{version_id}"
+            response = client.access_secret_version(request={"name": name})
 
-        # List of secrets to fetch from Secret Manager
-        secret_mapping = {
-            'API_HASH': 'API_HASH',
-            'API_ID': 'API_ID',
-        }
+            # Create directory if it doesn't exist
+            os.makedirs(os.path.dirname(file_path), exist_ok=True)
 
-        # Fetch each secret
-        for secret_id, var_name in secret_mapping.items():
-            secret_value = get_secret(GCP_PROJECT_ID, secret_id)
-            if secret_value:
-                globals()[var_name] = secret_value
-                logger.info(f"Loaded {var_name} from Secret Manager")
+            # Write binary data directly to file
+            with open(file_path, 'wb') as file:
+                file.write(response.payload.data)
+
+            logger.info(f"Secret file saved to {file_path}")
+            return True
+        except Exception as e:
+            logger.error(f"Error accessing secret file {secret_id}: {e}")
+            return False
+
+    def _load_missing_from_secret_manager(self) -> None:
+        """Load missing secrets from Google Secret Manager."""
+        secret_attrs = [attr for attr in self.__annotations__
+                        if not attr.startswith('_') and attr not in ('base_dir', 'gcp_project_id')]
+
+        for attr_name in secret_attrs:
+            current_value = getattr(self, attr_name)
+
+            if current_value is None:
+                secret_id = attr_name.upper()
+                secret_value = self._get_secret(secret_id)
+
+                if secret_value:
+                    setattr(self, attr_name, secret_value)
+                    logger.info(f"Loaded {attr_name} from Secret Manager")
+                else:
+                    logger.info(f"Could not load {attr_name} from Secret Manager")
             else:
-                logger.info(f"Using {var_name} from environment variables")
+                logger.debug(f"Using {attr_name} from environment variables")
 
-        # Also fetch and save the session file
-        session_path = os.path.join(BASE_DIR, 'telegram_scraper.session')
-        if get_secret_file(GCP_PROJECT_ID, 'telegram_scraper_session', session_path):
+        session_path = os.path.join(self.base_dir, 'telegram_scraper.session')
+        if self._get_secret_file('telegram_scraper_session', session_path):
             logger.info("Loaded telegram session from Secret Manager")
         else:
-            logger.warning("Could not load telegram session from Secret Manager")
-
-    logger.info("Configuration loaded successfully")
-
-    # Return a config dictionary for optional use
-    return {
-        'API_ID': API_ID,
-        'API_HASH': API_HASH
-    }
+            logger.debug("Could not load telegram session from Secret Manager")
 
 
-load_config()
+@dataclass
+class AppConfig:
+    """Main application configuration class that combines public and secret configs."""
+    secret: SecretConfig = field(default_factory=SecretConfig)
 
+    def as_dict(self) -> Dict[str, Any]:
+        """Return all configuration as a flat dictionary."""
+        result = {}
+        result.update(self.secret.as_dict())
+        return result
+
+
+config = AppConfig()
+
+API_ID = config.secret.api_id
+API_HASH = config.secret.api_hash
