@@ -25,6 +25,7 @@ class Post(TypedDict):
     summary: str | None
     channel_id: int
     url: str
+    id: int
 
 
 class FeedContent(TypedDict):
