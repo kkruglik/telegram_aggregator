@@ -51,7 +51,6 @@ class TelegramFeed:
         await self._get_todays_posts()
         await self._summarize_content()
         await self._add_content_to_db()
-        self._clear_cache()
         logger.info(f"[TelegramFeed] Feed {self.channel_id} updated.")
 
     async def _summarize_content(self):
