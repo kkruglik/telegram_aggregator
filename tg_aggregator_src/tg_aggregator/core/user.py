@@ -102,6 +102,9 @@ class BaseUser:
                 )
                 await asyncio.sleep(1)
 
+        for feed in self._user_feeds.values():
+            feed._clear_cache()
+
     async def save_user_to_database(self):
         """Save current user state to database"""
         logger.info(f"[BaseUser] Saving user {self.id} to database")
