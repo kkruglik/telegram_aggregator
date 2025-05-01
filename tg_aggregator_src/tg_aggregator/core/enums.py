@@ -23,8 +23,8 @@ class UserResponse:
 
     @classmethod
     def success(cls, **kwargs) -> 'UserResponse':
-        return cls(ResponseStatus.OK, **kwargs if kwargs else None)
+        return cls(ResponseStatus.OK, details=kwargs if kwargs else None)
 
     @classmethod
     def error(cls, status: ResponseStatus, **kwargs) -> 'UserResponse':
-        return cls(status, **kwargs if kwargs else None)
+        return cls(status=status, details=kwargs if kwargs else None)
