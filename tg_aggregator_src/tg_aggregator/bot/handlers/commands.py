@@ -249,18 +249,6 @@ async def process_unsubscribe_callback(callback_query: types.CallbackQuery):
         await callback_query.answer()  # This replaces bot.answer_callback_query
 
 
-@router.message()
-async def echo(message: Message):
-    """Echo all other messages - fallback handler"""
-    await message.answer(
-        "I didn't understand that command. Try using one of these:\n\n"
-        "/start - Start the bot\n"
-        "/subscribe - Subscribe to a feed\n"
-        "/list - List your subscribed feeds\n"
-        "/unsubscribe - Unsubscribe from a feed\n"
-        "/notification_time - Change your notification time\n"
-    )
-
 @router.message(Command("upgrade_premium"))
 async def cmd_upgrade_premium(message: Message):
     """Handle /upgrade_premium command - start the upgrade premium process"""
@@ -273,3 +261,14 @@ async def cmd_upgrade_premium(message: Message):
     await user.upgrade_user_to_premium()
 
 
+@router.message()
+async def echo(message: Message):
+    """Echo all other messages - fallback handler"""
+    await message.answer(
+        "I didn't understand that command. Try using one of these:\n\n"
+        "/start - Start the bot\n"
+        "/subscribe - Subscribe to a feed\n"
+        "/list - List your subscribed feeds\n"
+        "/unsubscribe - Unsubscribe from a feed\n"
+        "/notification_time - Change your notification time\n"
+    )
