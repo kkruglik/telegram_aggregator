@@ -24,8 +24,8 @@ class UserRegistry:
     async def _load_users_from_db(cls) -> None:
         existing_users = await DatabaseRepository.get_all_users()
         for user in existing_users:
-            user_id, user_tz, notification_time = user['id'], user['timezone'], user['notification_time']
-            user_cls = User(user_id, notification_time, user_tz)
+            user_id, user_tz, notification_time, is_premium = user['id'], user['timezone'], user['notification_time'], user['is_premium']
+            user_cls = User(user_id, notification_time, user_tz, is_premium)
             cls._users[user_id] = user_cls
             logger.info(f"User {user_id}|{user_tz}|{notification_time} loaded from db.")
             cls.schedule_user_updates(user_id)
@@ -57,7 +57,7 @@ class UserRegistry:
             return user
         else:
             logger.info(f"[UserRegistry] Creating new user {user_id}.")
-            await DatabaseRepository.create_user(user_id, None)
+            await DatabaseRepository.create_user(user_id, None, False)
             user = User(user_id)
 
         cls._users[user_id] = user
