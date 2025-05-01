@@ -35,18 +35,16 @@ class DatabaseRepository:
                                CREATE TABLE IF NOT EXISTS users
                                (
                                    id
-                                   BIGINT
-                                   PRIMARY
-                                   KEY
-                                   UNIQUE,
+                                              BIGINT
+                                       PRIMARY
+                                           KEY
+                                       UNIQUE,
                                    notification_time
-                                   TIME,
+                                              TIME,
                                    timezone
-                                   VARCHAR
-                               (
-                                   100
-                               ) DEFAULT 'EET'
-                                   )
+                                              VARCHAR(100) DEFAULT 'EET',
+                                   is_premium BOOLEAN      DEFAULT FALSE
+                               )
                                """)
 
             await conn.execute("""
@@ -110,13 +108,13 @@ class DatabaseRepository:
                                """)
 
     @classmethod
-    async def create_user(cls, user_id: int, notification_time: time = None):
+    async def create_user(cls, user_id: int, notification_time: time = None, is_premium: bool = False):
         """Create a new user"""
         async with cls.get_connection() as conn:
             return await conn.fetchrow("""
-                                       INSERT INTO users(id, notification_time)
+                                       INSERT INTO users(id, notification_time, is_premium)
                                        VALUES ($1, $2) RETURNING *
-                                       """, user_id, notification_time)
+                                       """, user_id, notification_time, is_premium)
 
     @classmethod
     async def get_user(cls, user_id):
@@ -155,7 +153,7 @@ class DatabaseRepository:
             )
 
     @classmethod
-    async def update_user(cls, user_id, notification_time=None, timezone=None):
+    async def update_user(cls, user_id, notification_time=None, timezone=None, is_premium=None):
         """
         Update user with specified fields
         """
