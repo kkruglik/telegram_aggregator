@@ -51,60 +51,62 @@ class DatabaseRepository:
                                CREATE TABLE IF NOT EXISTS feeds
                                (
                                    id
-                                   BIGINT
-                                   PRIMARY
-                                   KEY
-                                   UNIQUE,
+                                       BIGINT
+                                       PRIMARY
+                                           KEY
+                                       UNIQUE,
                                    channel_name
-                                   VARCHAR
-                               (
-                                   100
+                                       VARCHAR(100)
                                )
-                                   )
                                """)
 
             await conn.execute("""
                                CREATE TABLE IF NOT EXISTS content
                                (
                                    post_id
-                                   BIGINT
-                                   PRIMARY
-                                   KEY,
+                                       BIGINT
+                                       PRIMARY
+                                           KEY,
                                    text
-                                   TEXT,
+                                       TEXT,
                                    summary
-                                   TEXT,
+                                       TEXT,
                                    channel_id
-                                   BIGINT
-                                   REFERENCES
-                                   feeds
-                               (
-                                   id
-                               ) ON DELETE CASCADE
-                                   )
+                                       BIGINT
+                                       REFERENCES
+                                           feeds
+                                               (
+                                                id
+                                                   ) ON DELETE CASCADE
+                               )
                                """)
 
             await conn.execute("""
                                CREATE TABLE IF NOT EXISTS users_feeds
                                (
                                    user_id
-                                   BIGINT
-                                   REFERENCES
-                                   users
-                               (
-                                   id
-                               ) ON DELETE CASCADE,
+                                           BIGINT
+                                       REFERENCES
+                                           users
+                                               (
+                                                id
+                                                   ) ON DELETE CASCADE,
                                    feed_id BIGINT REFERENCES feeds
-                               (
-                                   id
-                               )
-                                 ON DELETE CASCADE,
+                                       (
+                                        id
+                                           )
+                                       ON DELETE CASCADE,
                                    CONSTRAINT user_feed_pk PRIMARY KEY
-                               (
-                                   user_id,
-                                   feed_id
+                                       (
+                                        user_id,
+                                        feed_id
+                                           )
                                )
-                                   )
+                               """)
+
+            await conn.execute("""
+                               ALTER TABLE users
+                                   ADD COLUMN IF NOT EXISTS is_premium BOOLEAN DEFAULT FALSE;
                                """)
 
     @classmethod
@@ -113,7 +115,8 @@ class DatabaseRepository:
         async with cls.get_connection() as conn:
             return await conn.fetchrow("""
                                        INSERT INTO users(id, notification_time, is_premium)
-                                       VALUES ($1, $2) RETURNING *
+                                       VALUES ($1, $2)
+                                       RETURNING *
                                        """, user_id, notification_time, is_premium)
 
     @classmethod
@@ -171,6 +174,11 @@ class DatabaseRepository:
             params.append(timezone)
             param_index += 1
 
+        if is_premium is not None:
+            set_parts.append(f"is_premium= ${param_index}")
+            params.append(is_premium)
+            param_index += 1
+
         if not set_parts:
             async with cls.get_connection() as conn:
                 return await conn.fetchrow("SELECT * FROM users WHERE id = $1", user_id)
@@ -226,7 +234,8 @@ class DatabaseRepository:
 
                 return await conn.fetchrow("""
                                            INSERT INTO users_feeds(user_id, feed_id)
-                                           VALUES ($1, $2) RETURNING *
+                                           VALUES ($1, $2)
+                                           RETURNING *
                                            """, user_id, channel_id)
 
             except asyncpg.UniqueViolationError:
@@ -276,7 +285,8 @@ class DatabaseRepository:
             async with cls.get_connection() as conn:
                 result = await conn.fetchrow("""
                                              INSERT INTO content(post_id, text, summary, channel_id)
-                                             VALUES ($1, $2, $3, $4) RETURNING *
+                                             VALUES ($1, $2, $3, $4)
+                                             RETURNING *
                                              """, post_id, text, summary, channel_id)
                 logger.info(f"Successfully added post {post_id} from channel {channel_id}")
                 return result
@@ -292,7 +302,8 @@ class DatabaseRepository:
                 result = await conn.fetchrow("""
                                              UPDATE content
                                              SET summary = $2
-                                             WHERE post_id = $1 RETURNING *
+                                             WHERE post_id = $1
+                                             RETURNING *
                                              """, post_id, summary)
                 if result:
                     logger.info(f"Successfully updated summary for post {post_id}")
