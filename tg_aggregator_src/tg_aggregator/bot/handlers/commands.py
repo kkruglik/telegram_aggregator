@@ -9,6 +9,7 @@ from aiogram.types import Message, ReplyKeyboardMarkup, KeyboardButton
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from ...core.registry import UserRegistry, FeedsRegistry
+from ...core.enums import ResponseStatus
 
 logger = logging.getLogger('news_aggregator')
 
@@ -159,11 +160,19 @@ async def process_feed_name(message: Message, state: FSMContext):
     user = await UserRegistry.get_or_create_user(user_id)
     feed = await FeedsRegistry.create_or_get_feed(feed_name)
 
-    if feed.channel_id in user._user_feeds:
-        await message.answer(f"You already subscribed for this channel: {feed_name}.")
-    else:
-        await user.subscribe(feed)
-        await message.answer(f"✅ You successfully subscribed for this channel: {feed_name}!")
+    result = await user.subscribe(feed)
+
+    match result.status:
+        case ResponseStatus.OK:
+            await message.answer(f"✅ You successfully subscribed for this channel: {feed_name}!")
+        case ResponseStatus.LIMIT_REACHED:
+            await message.answer(f"❌ You've reached the limit of feeds. Upgrade to premium to add more feeds!")
+        case ResponseStatus.ALREADY_SUBSCRIBED:
+            await message.answer(f"ℹ️ You're already subscribed to {feed_name}.")
+        case ResponseStatus.DATABASE_ERROR:
+            await message.answer("❌ Sorry, there was a technical issue. Please try again later.")
+        case _:
+            await message.answer("❌ An unexpected error occurred. Please try again.")
 
     await state.clear()
 
@@ -251,3 +260,16 @@ async def echo(message: Message):
         "/unsubscribe - Unsubscribe from a feed\n"
         "/notification_time - Change your notification time\n"
     )
+
+@router.message(Command("upgrade_premium"))
+async def cmd_upgrade_premium(message: Message):
+    """Handle /upgrade_premium command - start the upgrade premium process"""
+    user_id = message.from_user.id
+    user = await UserRegistry.get_or_create_user(user_id)
+    if user.is_premium:
+        await message.answer("You already have premium subscription.")
+        return
+
+    await user.upgrade_user_to_premium()
+
+
