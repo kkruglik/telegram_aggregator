@@ -1,10 +1,11 @@
 import logging.config
 import os
+from pathlib import Path
 
 import uvicorn
 from fastapi import FastAPI, HTTPException
 
-from .config import API_ID, API_HASH
+from .config import initialize_config
 from .models import (
     ChannelRequestByName,
     ChannelRequestByID,
@@ -16,7 +17,13 @@ from .scraper import TelegramScraperQueue
 from .utils import load_yaml
 
 logger = logging.getLogger("telegram_scraper_service")
-logging.config.dictConfig(load_yaml("config/scraper_logger.yaml"))
+logging.config.dictConfig(load_yaml("config/scraper/logger.yaml"))
+
+default_config_path = (
+    Path(__file__).resolve().parents[2] / "config" / "scraper" / "config-local.yaml"
+)
+
+config = initialize_config(default_config_path)
 
 app = FastAPI(
     title="Telegram Scraper Service",
@@ -24,7 +31,9 @@ app = FastAPI(
     version="1.0.0",
 )
 
-telegram_queue = TelegramScraperQueue(API_ID, API_HASH, "telegram_scraper")
+telegram_queue = TelegramScraperQueue(
+    config.scraper.api_id, config.scraper.api_hash, config.scraper.session_name
+)
 
 
 @app.on_event("startup")
