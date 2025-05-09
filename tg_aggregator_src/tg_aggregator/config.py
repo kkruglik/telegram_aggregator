@@ -200,9 +200,13 @@ def initialize_config(yaml_path: Path) -> AppConfig:
     logger.info("Configuration initialization complete")
     return app_config
 
+config_name = os.environ.get("CONFIG_NAME")
+
+assert config_name, "CONFIG_NAME environment variable not set"
+assert config_name.endswith(".yaml"), "CONFIG_NAME must end with .yaml"
 
 default_config_path = (
-    Path(__file__).resolve().parents[2] / "config" / "aggregator" / "config-local.yaml"
+    Path(__file__).resolve().parents[2] / "config" / "aggregator" / config_name
 )
 
 config = initialize_config(default_config_path)
