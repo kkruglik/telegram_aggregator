@@ -45,9 +45,7 @@ class TelegramFeed:
 
     async def update(self):
         """Update the feed with new content from the Telegram channel"""
-        logger.info(
-            f"Updating feed {self.channel_id} from channel {self.channel_id}"
-        )
+        logger.info(f"Updating feed {self.channel_id} from channel {self.channel_id}")
         await self._get_todays_posts()
         await self._summarize_content()
         await self._add_content_to_db()
