@@ -5,7 +5,7 @@ from aiogram.fsm.storage.memory import MemoryStorage
 
 from .handlers.commands import router as commands_router
 
-logger = logging.getLogger('news_aggregator')
+logger = logging.getLogger("news_aggregator")
 
 
 def init_bot(bot_token: str):

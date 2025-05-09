@@ -5,7 +5,7 @@ from typing import Callable, Dict, Any, Union, Coroutine
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from pytz import timezone, UTC
 
-logger = logging.getLogger('news_aggregator')
+logger = logging.getLogger("news_aggregator")
 
 
 class TasksScheduler:
@@ -13,13 +13,15 @@ class TasksScheduler:
         self.scheduler = AsyncIOScheduler()
         self.jobs = {}
 
-    def add_job(self,
-                func: Union[Callable[..., Coroutine[Any, Any, Any]], Callable[..., Any]],
-                job_id: str,
-                interval_minutes: int = None,
-                cron: str = None,
-                timezone_name: str = None,
-                **kwargs) -> str:
+    def add_job(
+        self,
+        func: Union[Callable[..., Coroutine[Any, Any, Any]], Callable[..., Any]],
+        job_id: str,
+        interval_minutes: int = None,
+        cron: str = None,
+        timezone_name: str = None,
+        **kwargs,
+    ) -> str:
         """
         Add a job to the scheduler
 
@@ -49,6 +51,7 @@ class TasksScheduler:
 
             job_func = run_coroutine
         else:
+
             def run_function():
                 try:
                     func(**kwargs)
@@ -62,27 +65,28 @@ class TasksScheduler:
         if cron:
             job = self.scheduler.add_job(
                 job_func,
-                'cron',
+                "cron",
                 id=job_id,
                 replace_existing=True,
                 timezone=task_tz,
-                **self._parse_cron(cron)
+                **self._parse_cron(cron),
             )
         elif interval_minutes:
             job = self.scheduler.add_job(
                 job_func,
-                'interval',
+                "interval",
                 minutes=interval_minutes,
                 id=job_id,
                 timezone=task_tz,
-                replace_existing=True
+                replace_existing=True,
             )
         else:
             raise ValueError("Either interval_minutes or cron must be specified")
 
         self.jobs[job_id] = job
-        logger.info(f"Added job '{job_id}' to scheduler" +
-                    f" ({'async' if is_coroutine else 'sync'})")
+        logger.info(
+            f"Added job '{job_id}' to scheduler" + f" ({'async' if is_coroutine else 'sync'})"
+        )
         return job_id
 
     def remove_job(self, job_id: str) -> bool:
@@ -111,9 +115,9 @@ class TasksScheduler:
             raise ValueError("Cron string must have 5 parts: minute hour day month day_of_week")
 
         return {
-            'minute': parts[0],
-            'hour': parts[1],
-            'day': parts[2],
-            'month': parts[3],
-            'day_of_week': parts[4]
+            "minute": parts[0],
+            "hour": parts[1],
+            "day": parts[2],
+            "month": parts[3],
+            "day_of_week": parts[4],
         }

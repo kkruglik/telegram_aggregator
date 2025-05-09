@@ -5,12 +5,18 @@ import uvicorn
 from fastapi import FastAPI, HTTPException
 
 from .config import API_ID, API_HASH
-from .models import ChannelRequestByName, ChannelRequestByID, ChannelMessages, ChannelIDRequest, ChannelIDResponse
+from .models import (
+    ChannelRequestByName,
+    ChannelRequestByID,
+    ChannelMessages,
+    ChannelIDRequest,
+    ChannelIDResponse,
+)
 from .scraper import TelegramScraperQueue
 from .utils import load_yaml
 
-logger = logging.getLogger('telegram_scraper_service')
-logging.config.dictConfig(load_yaml('config/scraper_logger.yaml'))
+logger = logging.getLogger("telegram_scraper_service")
+logging.config.dictConfig(load_yaml("config/scraper_logger.yaml"))
 
 app = FastAPI(
     title="Telegram Scraper Service",
@@ -18,7 +24,7 @@ app = FastAPI(
     version="1.0.0",
 )
 
-telegram_queue = TelegramScraperQueue(API_ID, API_HASH, 'telegram_scraper')
+telegram_queue = TelegramScraperQueue(API_ID, API_HASH, "telegram_scraper")
 
 
 @app.on_event("startup")

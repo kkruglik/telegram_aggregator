@@ -4,7 +4,7 @@ from datetime import time
 
 import asyncpg
 
-logger = logging.getLogger('news_aggregator')
+logger = logging.getLogger("news_aggregator")
 
 
 class DatabaseRepository:
@@ -110,23 +110,27 @@ class DatabaseRepository:
                                """)
 
     @classmethod
-    async def create_user(cls, user_id: int, notification_time: time = None, is_premium: bool = False):
+    async def create_user(
+        cls, user_id: int, notification_time: time = None, is_premium: bool = False
+    ):
         """Create a new user"""
         async with cls.get_connection() as conn:
-            return await conn.fetchrow("""
+            return await conn.fetchrow(
+                """
                                        INSERT INTO users(id, notification_time, is_premium)
                                        VALUES ($1, $2)
                                        RETURNING *
-                                       """, user_id, notification_time, is_premium)
+                                       """,
+                user_id,
+                notification_time,
+                is_premium,
+            )
 
     @classmethod
     async def get_user(cls, user_id):
         """Get user by telegram ID"""
         async with cls.get_connection() as conn:
-            return await conn.fetchrow(
-                "SELECT * FROM users WHERE id = $1",
-                user_id
-            )
+            return await conn.fetchrow("SELECT * FROM users WHERE id = $1", user_id)
 
     @classmethod
     async def get_all_users(cls):
@@ -185,7 +189,7 @@ class DatabaseRepository:
 
         query = f"""
             UPDATE users
-            SET {', '.join(set_parts)}
+            SET {", ".join(set_parts)}
             WHERE id = $1
             RETURNING *
         """
@@ -197,19 +201,20 @@ class DatabaseRepository:
     async def create_feed(cls, channel_id: int, channel_name: str):
         """Create a new feed"""
         async with cls.get_connection() as conn:
-            return await conn.fetchrow("""
+            return await conn.fetchrow(
+                """
                                        INSERT INTO feeds(id, channel_name)
                                        VALUES ($1, $2);
-                                       """, channel_id, channel_name)
+                                       """,
+                channel_id,
+                channel_name,
+            )
 
     @classmethod
     async def get_feed(cls, channel_id: int):
         """Get feed by channel name"""
         async with cls.get_connection() as conn:
-            return await conn.fetchrow(
-                "SELECT * FROM feeds WHERE id = $1",
-                channel_id
-            )
+            return await conn.fetchrow("SELECT * FROM feeds WHERE id = $1", channel_id)
 
     @classmethod
     async def subscribe_to_feed(cls, user_id: int, channel_id: int):
@@ -219,33 +224,45 @@ class DatabaseRepository:
                 user = await cls.get_user(user_id)
                 feed = await cls.get_feed(channel_id)
                 if user is None or feed is None:
-                    raise ValueError(f"User ID or feed ID not found")
+                    raise ValueError("User ID or feed ID not found")
 
-                existing = await conn.fetchrow("""
+                existing = await conn.fetchrow(
+                    """
                                                SELECT *
                                                FROM users_feeds
                                                WHERE user_id = $1
                                                  AND feed_id = $2
-                                               """, user_id, channel_id)
+                                               """,
+                    user_id,
+                    channel_id,
+                )
 
                 if existing:
                     logger.info(f"User {user_id} already subscribed to feed {channel_id}")
                     return existing
 
-                return await conn.fetchrow("""
+                return await conn.fetchrow(
+                    """
                                            INSERT INTO users_feeds(user_id, feed_id)
                                            VALUES ($1, $2)
                                            RETURNING *
-                                           """, user_id, channel_id)
+                                           """,
+                    user_id,
+                    channel_id,
+                )
 
             except asyncpg.UniqueViolationError:
                 logger.info(f"Race condition: User {user_id} was subscribed to feed {channel_id}")
-                return await conn.fetchrow("""
+                return await conn.fetchrow(
+                    """
                                            SELECT *
                                            FROM users_feeds
                                            WHERE user_id = $1
                                              AND feed_id = $2
-                                           """, user_id, channel_id)
+                                           """,
+                    user_id,
+                    channel_id,
+                )
 
             except Exception as e:
                 logger.error(f"Error subscribing user {user_id} to feed {channel_id}: {e}")
@@ -256,23 +273,31 @@ class DatabaseRepository:
         """Unsubscribe from a feed"""
         try:
             async with cls.get_connection() as conn:
-                existing_subscription = await conn.fetchrow("""
+                existing_subscription = await conn.fetchrow(
+                    """
                                                             SELECT user_id
                                                             FROM users_feeds
                                                             WHERE user_id = $1
                                                               AND feed_id = $2;
-                                                            """, user_id, channel_id)
+                                                            """,
+                    user_id,
+                    channel_id,
+                )
 
                 if not existing_subscription:
                     logger.info(f"No subscription found for user {user_id} and feed {channel_id}")
                     return None
 
-                return await conn.execute("""
+                return await conn.execute(
+                    """
                                           DELETE
                                           FROM users_feeds
                                           WHERE user_id = $1
                                             AND feed_id = $2;
-                                          """, user_id, channel_id)
+                                          """,
+                    user_id,
+                    channel_id,
+                )
 
         except Exception as e:
             logger.error(f"Error unsubscribing user {user_id} from feed {channel_id}: {e}")
@@ -283,11 +308,17 @@ class DatabaseRepository:
         """Add a new post to the content table"""
         try:
             async with cls.get_connection() as conn:
-                result = await conn.fetchrow("""
+                result = await conn.fetchrow(
+                    """
                                              INSERT INTO content(post_id, text, summary, channel_id)
                                              VALUES ($1, $2, $3, $4)
                                              RETURNING *
-                                             """, post_id, text, summary, channel_id)
+                                             """,
+                    post_id,
+                    text,
+                    summary,
+                    channel_id,
+                )
                 logger.info(f"Successfully added post {post_id} from channel {channel_id}")
                 return result
         except Exception as e:
@@ -299,12 +330,16 @@ class DatabaseRepository:
         """Update summary for existing post in the content table"""
         try:
             async with cls.get_connection() as conn:
-                result = await conn.fetchrow("""
+                result = await conn.fetchrow(
+                    """
                                              UPDATE content
                                              SET summary = $2
                                              WHERE post_id = $1
                                              RETURNING *
-                                             """, post_id, summary)
+                                             """,
+                    post_id,
+                    summary,
+                )
                 if result:
                     logger.info(f"Successfully updated summary for post {post_id}")
                 else:
@@ -319,12 +354,15 @@ class DatabaseRepository:
         """Check if post exists and has a non-empty summary"""
         try:
             async with cls.get_connection() as conn:
-                result = await conn.fetchrow("""
+                result = await conn.fetchrow(
+                    """
                                              SELECT summary
                                              FROM content
                                              WHERE post_id = $1
-                                             """, post_id)
-                return bool(result and result['summary'])
+                                             """,
+                    post_id,
+                )
+                return bool(result and result["summary"])
         except Exception as e:
             logger.error(f"Error checking summary for post {post_id}: {e}")
             raise

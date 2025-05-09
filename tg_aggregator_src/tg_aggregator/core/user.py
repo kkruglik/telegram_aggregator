@@ -9,14 +9,20 @@ from ..utils.utils import get_timezone_string
 from .feed import TelegramFeed
 from .enums import ResponseStatus, UserResponse
 
-logger = logging.getLogger('news_aggregator')
+logger = logging.getLogger("news_aggregator")
 
 
 class User:
     _bot = None
-    __slots__ = ('id', '_user_feeds', 'notification_time', 'timezone', 'is_premium')
+    __slots__ = ("id", "_user_feeds", "notification_time", "timezone", "is_premium")
 
-    def __init__(self, user_id: int, notification_time: time = None, timezone: str = None, is_premium: bool = False):
+    def __init__(
+        self,
+        user_id: int,
+        notification_time: time = None,
+        timezone: str = None,
+        is_premium: bool = False,
+    ):
         self.id = user_id
         self._user_feeds: dict[int, TelegramFeed] = {}
         self.notification_time = notification_time
@@ -68,7 +74,9 @@ class User:
             await DatabaseRepository.unsubscribe_from_feed(self.id, channel_id)
             logger.info(f"User {self.id} now subscribed to {len(self._user_feeds)} feeds")
         else:
-            logger.warning(f"User {self.id} tried to unsubscribe from non-existent feed {channel_id}")
+            logger.warning(
+                f"User {self.id} tried to unsubscribe from non-existent feed {channel_id}"
+            )
 
     def get_user_feeds(self):
         logger.debug(f"Retrieved feed list for user {self.id}")
@@ -82,8 +90,10 @@ class User:
 
         for feed, result in zip(self._user_feeds.values(), results):
             if isinstance(result, Exception):
-                logger.error(f"Failed to update feed {feed.channel_id} for user {self.id}: {str(result)}")
-                logger.error(f"Exception details:", exc_info=result)
+                logger.error(
+                    f"Failed to update feed {feed.channel_id} for user {self.id}: {str(result)}"
+                )
+                logger.error("Exception details:", exc_info=result)
 
         logger.info(f"Completed feed updates for user {self.id}")
 
@@ -91,13 +101,12 @@ class User:
         logger.info(f"Send feed update for user {self.id}")
         MESSAGE_LIMIT = 4096
         for feed_name, feed in self._user_feeds.items():
-
-            if not feed.content['posts']:
+            if not feed.content["posts"]:
                 logger.info(f"Feed {feed_name} is empty, skipping")
                 continue
 
-            todays_feed = f'{feed.channel_name} feed: \n\n'
-            feed_content = feed.content['posts']
+            todays_feed = f"{feed.channel_name} feed: \n\n"
+            feed_content = feed.content["posts"]
             post_ids = list(feed_content.keys())
             for post_id in post_ids:
                 post_content = feed_content[post_id]
@@ -106,7 +115,7 @@ class User:
 
             if len(todays_feed) > MESSAGE_LIMIT:
                 for i in range(0, len(todays_feed), MESSAGE_LIMIT):
-                    todays_feed_part = todays_feed[i:i + MESSAGE_LIMIT]
+                    todays_feed_part = todays_feed[i : i + MESSAGE_LIMIT]
                     await self._bot.send_message(chat_id=self.id, text=todays_feed_part)
                     await asyncio.sleep(1)
 

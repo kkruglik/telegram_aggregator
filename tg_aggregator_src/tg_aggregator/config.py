@@ -8,7 +8,7 @@ from typing import Dict, Optional, Any
 from dotenv import load_dotenv
 from google.cloud import secretmanager
 
-logger = logging.getLogger('news_aggregator')
+logger = logging.getLogger("news_aggregator")
 
 
 @dataclass
@@ -26,14 +26,14 @@ class BaseConfig:
 
     def _load_config(self) -> None:
         """Load configuration from environment variables."""
-        env_path = self.base_dir / '.env'
+        env_path = self.base_dir / ".env"
         load_dotenv(dotenv_path=env_path)
         self._load_from_env()
 
     def _load_from_env(self) -> None:
         """Load configuration from environment variables."""
         for attr_name in self.__annotations__:
-            if attr_name.startswith('_') or attr_name == 'base_dir':
+            if attr_name.startswith("_") or attr_name == "base_dir":
                 continue
 
             env_name = attr_name.upper()
@@ -46,7 +46,7 @@ class BaseConfig:
         """Return configuration as dictionary."""
         result = {}
         for attr_name in self.__annotations__:
-            if attr_name.startswith('_') or attr_name == 'base_dir':
+            if attr_name.startswith("_") or attr_name == "base_dir":
                 continue
             result[attr_name.upper()] = getattr(self, attr_name)
         return result
@@ -118,7 +118,7 @@ class SecretConfig(BaseConfig):
             os.makedirs(os.path.dirname(file_path), exist_ok=True)
 
             # Write binary data directly to file
-            with open(file_path, 'wb') as file:
+            with open(file_path, "wb") as file:
                 file.write(response.payload.data)
 
             logger.info(f"Secret file saved to {file_path}")
@@ -129,8 +129,11 @@ class SecretConfig(BaseConfig):
 
     def _load_missing_from_secret_manager(self) -> None:
         """Load missing secrets from Google Secret Manager."""
-        secret_attrs = [attr for attr in self.__annotations__
-                        if not attr.startswith('_') and attr not in ('base_dir', 'gcp_project_id')]
+        secret_attrs = [
+            attr
+            for attr in self.__annotations__
+            if not attr.startswith("_") and attr not in ("base_dir", "gcp_project_id")
+        ]
 
         for attr_name in secret_attrs:
             current_value = getattr(self, attr_name)
@@ -147,8 +150,8 @@ class SecretConfig(BaseConfig):
             else:
                 logger.debug(f"Using {attr_name} from environment variables")
 
-        session_path = os.path.join(self.base_dir, 'telegram_scraper.session')
-        if self._get_secret_file('telegram_scraper_session', session_path):
+        session_path = os.path.join(self.base_dir, "telegram_scraper.session")
+        if self._get_secret_file("telegram_scraper_session", session_path):
             logger.info("Loaded telegram session from Secret Manager")
         else:
             logger.debug("Could not load telegram session from Secret Manager")
@@ -164,16 +167,18 @@ class AppConfig:
     @cached_property
     def database_url(self) -> str:
         db_password = self.secret.db_password or ""
-        return (f"postgresql://{self.public.db_user}:{db_password}@"
-                f"{self.public.db_host}:{self.public.db_port}/{self.public.db_name}")
+        return (
+            f"postgresql://{self.public.db_user}:{db_password}@"
+            f"{self.public.db_host}:{self.public.db_port}/{self.public.db_name}"
+        )
 
     def as_dict(self) -> Dict[str, Any]:
         """Return all configuration as a flat dictionary."""
         result = {}
         result.update(self.public.as_dict())
         result.update(self.secret.as_dict())
-        result['DATABASE_URL'] = self.database_url
-        result['SCRAPER_URL'] = self.public.scraper_url
+        result["DATABASE_URL"] = self.database_url
+        result["SCRAPER_URL"] = self.public.scraper_url
         return result
 
 

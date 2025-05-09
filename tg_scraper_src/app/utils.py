@@ -4,7 +4,7 @@ import yaml
 
 
 def load_yaml(path: str | Path) -> dict:
-    with open(path, 'rt') as f:
+    with open(path, "rt") as f:
         try:
             config = yaml.safe_load(f.read())
             return config

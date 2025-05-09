@@ -9,7 +9,7 @@ import yaml
 
 
 def load_yaml(path: str | Path) -> dict:
-    with open(path, 'rt') as f:
+    with open(path, "rt") as f:
         try:
             config = yaml.safe_load(f.read())
             return config
@@ -18,9 +18,7 @@ def load_yaml(path: str | Path) -> dict:
 
 
 def setup_logging(
-        default_path='logging_config.yaml',
-        default_level=logging.INFO,
-        env_key='LOG_CONFIG'
+    default_path="logging_config.yaml", default_level=logging.INFO, env_key="LOG_CONFIG"
 ):
     """Setup logging configuration from YAML file
 
@@ -32,12 +30,12 @@ def setup_logging(
     path = os.getenv(env_key, default_path)
 
     if os.path.exists(path):
-        with open(path, 'rt') as f:
+        with open(path, "rt") as f:
             try:
                 config = yaml.safe_load(f.read())
 
                 # Ensure logs directory exists
-                log_dir = os.path.dirname(config['handlers']['file']['filename'])
+                log_dir = os.path.dirname(config["handlers"]["file"]["filename"])
                 if not os.path.exists(log_dir):
                     os.makedirs(log_dir)
 

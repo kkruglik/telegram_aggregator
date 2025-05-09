@@ -11,7 +11,7 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 from ...core.registry import UserRegistry, FeedsRegistry
 from ...core.enums import ResponseStatus
 
-logger = logging.getLogger('news_aggregator')
+logger = logging.getLogger("news_aggregator")
 
 router = Router()
 
@@ -28,8 +28,20 @@ class RegistrationStates(StatesGroup):
 
 def create_time_selection_keyboard():
     builder = InlineKeyboardBuilder()
-    hours = ["06:00", "07:00", "08:00", "09:00", "10:00", "11:00",
-             "12:00", "14:00", "17:30", "18:00", "20:00", "22:00"]
+    hours = [
+        "06:00",
+        "07:00",
+        "08:00",
+        "09:00",
+        "10:00",
+        "11:00",
+        "12:00",
+        "14:00",
+        "17:30",
+        "18:00",
+        "20:00",
+        "22:00",
+    ]
 
     for hour in hours:
         builder.button(text=hour, callback_data=f"time:{hour}")
@@ -41,24 +53,26 @@ def create_time_selection_keyboard():
 @router.message(CommandStart())
 async def start(message: Message, state: FSMContext):
     user = await UserRegistry.get_or_create_user(message.from_user.id)
-    logger.info(f'New message from user {user}')
+    logger.info(f"New message from user {user}")
 
     if user.is_user_registered:
-        await message.answer(f"Welcome back! Your notification time is set to {user.notification_time}.")
+        await message.answer(
+            f"Welcome back! Your notification time is set to {user.notification_time}."
+        )
         return
 
     location_keyboard = ReplyKeyboardMarkup(
         keyboard=[
             [KeyboardButton(text="Share My Location", request_location=True)],
-            [KeyboardButton(text="Skip Location")]
+            [KeyboardButton(text="Skip Location")],
         ],
         resize_keyboard=True,
-        one_time_keyboard=True
+        one_time_keyboard=True,
     )
 
     await message.answer(
         "Please share your location so we can provide news relevant to your timezone.",
-        reply_markup=location_keyboard
+        reply_markup=location_keyboard,
     )
 
     await state.set_state(RegistrationStates.waiting_for_location)
@@ -69,12 +83,12 @@ async def change_location(message: Message, state: FSMContext):
     location_keyboard = ReplyKeyboardMarkup(
         keyboard=[[KeyboardButton(text="Share My Location", request_location=True)]],
         resize_keyboard=True,
-        one_time_keyboard=True
+        one_time_keyboard=True,
     )
 
     await message.answer(
         "Please share your updated location. This information need to determine your timezone.",
-        reply_markup=location_keyboard
+        reply_markup=location_keyboard,
     )
 
     await state.set_state(RegistrationStates.waiting_for_location)
@@ -84,7 +98,7 @@ async def change_location(message: Message, state: FSMContext):
 async def change_notification_time(message: Message, state: FSMContext):
     await message.answer(
         "Please select your preferred notification time:",
-        reply_markup=create_time_selection_keyboard()
+        reply_markup=create_time_selection_keyboard(),
     )
 
     await state.set_state(RegistrationStates.waiting_for_notification_time)
@@ -100,7 +114,9 @@ async def process_location(message: Message, state: FSMContext):
         lng = message.location.longitude
         user.set_timezone(lat, lng)
 
-        await message.answer(f"Thanks for sharing your location! Your timezone is set to {user.timezone}.")
+        await message.answer(
+            f"Thanks for sharing your location! Your timezone is set to {user.timezone}."
+        )
     elif message.text == "Skip Location":
         await message.answer("Location skipped. Your default timezone will be EET.")
     else:
@@ -110,7 +126,7 @@ async def process_location(message: Message, state: FSMContext):
     # Move to notification time selection
     await message.answer(
         "What time would you like to receive daily news updates?",
-        reply_markup=create_time_selection_keyboard()
+        reply_markup=create_time_selection_keyboard(),
     )
 
     await state.set_state(RegistrationStates.waiting_for_notification_time)
@@ -121,7 +137,7 @@ async def process_notification_time(callback: types.CallbackQuery, state: FSMCon
     user_id = callback.from_user.id
     user = await UserRegistry.get_or_create_user(user_id)
 
-    logger.info(f'Callback data: {callback.data}')
+    logger.info(f"Callback data: {callback.data}")
 
     selected_time = callback.data.split("time:")[1]
 
@@ -141,7 +157,7 @@ async def process_notification_time(callback: types.CallbackQuery, state: FSMCon
     await state.clear()
 
 
-@router.message(Command('subscribe'))
+@router.message(Command("subscribe"))
 async def subscribe(message: Message, state: FSMContext):
     await message.answer("Send channel name in format @channel_name")
     await state.set_state(FeedStates.waiting_for_feed_name)
@@ -166,7 +182,9 @@ async def process_feed_name(message: Message, state: FSMContext):
         case ResponseStatus.OK:
             await message.answer(f"✅ You successfully subscribed for this channel: {feed_name}!")
         case ResponseStatus.LIMIT_REACHED:
-            await message.answer(f"❌ You've reached the limit of feeds. Upgrade to premium to add more feeds!")
+            await message.answer(
+                "❌ You've reached the limit of feeds. Upgrade to premium to add more feeds!"
+            )
         case ResponseStatus.ALREADY_SUBSCRIBED:
             await message.answer(f"ℹ️ You're already subscribed to {feed_name}.")
         case ResponseStatus.DATABASE_ERROR:
@@ -190,8 +208,7 @@ async def cmd_list(message: Message):
             feed_list = "\n".join([f"• {feed.channel_name}" for feed in feeds.values()])
             await message.answer(f"Your subscriptions:\n\n{feed_list}")
         else:
-            await message.answer(
-                "You dont have any subscriptions. Type /subscribe to add some.")
+            await message.answer("You dont have any subscriptions. Type /subscribe to add some.")
     except KeyError:
         await message.answer("Type /start to start the bot.")
 
@@ -216,10 +233,13 @@ async def cmd_unsubscribe(message: Message, state: FSMContext):
         buttons = []
         for feed in feeds.values():
             channel_name = feed.channel_name
-            buttons.append([types.InlineKeyboardButton(
-                text=channel_name,
-                callback_data=f"unsub_{feed.channel_id}"
-            )])
+            buttons.append(
+                [
+                    types.InlineKeyboardButton(
+                        text=channel_name, callback_data=f"unsub_{feed.channel_id}"
+                    )
+                ]
+            )
 
         keyboard = types.InlineKeyboardMarkup(inline_keyboard=buttons)
 
@@ -232,7 +252,7 @@ async def cmd_unsubscribe(message: Message, state: FSMContext):
 async def process_unsubscribe_callback(callback_query: types.CallbackQuery):
     """Process the unsubscription callback"""
 
-    feed_id = int(callback_query.data.replace('unsub_', ''))
+    feed_id = int(callback_query.data.replace("unsub_", ""))
     user_id = callback_query.from_user.id
 
     try:
@@ -240,10 +260,12 @@ async def process_unsubscribe_callback(callback_query: types.CallbackQuery):
         await user.unsubscribe(feed_id)
         FeedsRegistry.release_feed(feed_id)
 
-        await callback_query.message.answer(f"✅ You successfully unsubscribed from channel.")
+        await callback_query.message.answer("✅ You successfully unsubscribed from channel.")
         await callback_query.answer()
 
-        await callback_query.message.edit_reply_markup(reply_markup=None)  # This replaces bot.edit_message_reply_markup
+        await callback_query.message.edit_reply_markup(
+            reply_markup=None
+        )  # This replaces bot.edit_message_reply_markup
     except KeyError:
         await callback_query.message.answer("Unknown error. Try again later.")
         await callback_query.answer()  # This replaces bot.answer_callback_query

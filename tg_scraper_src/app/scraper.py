@@ -4,7 +4,7 @@ from datetime import datetime, timedelta, timezone
 
 from telethon import TelegramClient
 
-logger = logging.getLogger('telegram_scraper_service')
+logger = logging.getLogger("telegram_scraper_service")
 
 
 class TelegramScraperQueue:
@@ -94,7 +94,9 @@ class TelegramScraperQueue:
         return await self._enqueue_task(self._get_channel_id, channel)
 
     @staticmethod
-    async def _get_today_messages(client: TelegramClient, channel_id: int = None, channel_name: str = None):
+    async def _get_today_messages(
+        client: TelegramClient, channel_id: int = None, channel_name: str = None
+    ):
         """Get messages from the last 24 hours"""
         channel_entity = channel_name or channel_id
 
@@ -104,25 +106,28 @@ class TelegramScraperQueue:
         cutoff_time = datetime.now(tz=timezone.utc) - timedelta(hours=24)
 
         messages = {
-            'meta': {'channel_id': channel_entity, 'date': datetime.now(tz=timezone.utc)},
-            'messages': [],
+            "meta": {
+                "channel_id": channel_entity,
+                "date": datetime.now(tz=timezone.utc),
+            },
+            "messages": [],
         }
 
         try:
             async for message in client.iter_messages(
-                    entity=channel_entity,
-                    limit=100,
-                    offset_date=datetime.now(tz=timezone.utc)
+                entity=channel_entity,
+                limit=100,
+                offset_date=datetime.now(tz=timezone.utc),
             ):
                 # Now both dates have timezone info and can be compared
                 if message.date < cutoff_time:
                     break
 
                 message_text = message.text
-                if message_text is None or message_text == '':
+                if message_text is None or message_text == "":
                     continue
 
-                messages['messages'].append({'id': message.id, 'text': message_text})
+                messages["messages"].append({"id": message.id, "text": message_text})
 
             return messages
         except Exception as e:
@@ -140,7 +145,7 @@ class TelegramScraperQueue:
             username = entity.username
 
             # For supergroups/channels, we need to get the negative ID
-            if hasattr(entity, 'megagroup') or hasattr(entity, 'broadcast'):
+            if hasattr(entity, "megagroup") or hasattr(entity, "broadcast"):
                 # Convert to channel ID format with -100 prefix
                 channel_id = int(f"-100{channel_id}")
 

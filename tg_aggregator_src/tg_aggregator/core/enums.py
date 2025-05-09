@@ -1,15 +1,15 @@
-from enum import Enum
+from enum import StrEnum, auto
 from dataclasses import dataclass
 from typing import Optional, Dict, Any
 
 
-class ResponseStatus(str, Enum):
-    OK = "OK"
-    UNKNOWN_ERROR = "UNKNOWN_ERROR"
-    UNAUTHORIZED = "UNAUTHORIZED"
-    DATABASE_ERROR = "DATABASE_ERROR"
-    LIMIT_REACHED = "LIMIT_REACHED"
-    ALREADY_SUBSCRIBED = "ALREADY_SUBSCRIBED"
+class ResponseStatus(StrEnum):
+    OK = auto()
+    UNKNOWN_ERROR = auto()
+    UNAUTHORIZED = auto()
+    DATABASE_ERROR = auto()
+    LIMIT_REACHED = auto()
+    ALREADY_SUBSCRIBED = auto()
 
 
 @dataclass
@@ -22,9 +22,9 @@ class UserResponse:
         return self.status == ResponseStatus.OK
 
     @classmethod
-    def success(cls, **kwargs) -> 'UserResponse':
+    def success(cls, **kwargs) -> "UserResponse":
         return cls(ResponseStatus.OK, details=kwargs if kwargs else None)
 
     @classmethod
-    def error(cls, status: ResponseStatus, **kwargs) -> 'UserResponse':
+    def error(cls, status: ResponseStatus, **kwargs) -> "UserResponse":
         return cls(status=status, details=kwargs if kwargs else None)
