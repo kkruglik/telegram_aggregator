@@ -10,7 +10,7 @@ RUN pip install --upgrade pip && \
     pip install fastapi==0.115.1 uvicorn==0.34.2 telethon==1.39.0 python-dotenv==1.1.0 google-cloud-secret-manager==2.23.3 pyyaml==6.0.2
 
 COPY tg_scraper_src/ ./tg_scraper_src/
-COPY config/ ./config/
+COPY config/scraper ./config/scraper
 
 RUN mkdir -p logs
 

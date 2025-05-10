@@ -11,7 +11,7 @@ RUN sh /uv-installer.sh && rm /uv-installer.sh
 ENV PATH="/root/.local/bin/:$PATH"
 
 COPY pyproject.toml uv.lock ./
-COPY config/ ./config/
+COPY config/aggregator ./config/aggregator
 COPY tg_aggregator_src/ ./tg_aggregator_src/
 
 RUN uv sync --frozen
