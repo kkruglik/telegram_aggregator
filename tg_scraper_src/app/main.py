@@ -19,8 +19,13 @@ from .utils import load_yaml
 logger = logging.getLogger("telegram_scraper_service")
 logging.config.dictConfig(load_yaml("config/scraper/logger.yaml"))
 
+config_name = os.environ.get("CONFIG_NAME")
+
+assert config_name, "CONFIG_NAME environment variable not set"
+assert config_name.endswith(".yaml"), "CONFIG_NAME must end with .yaml"
+
 default_config_path = (
-    Path(__file__).resolve().parents[2] / "config" / "scraper" / "config-local.yaml"
+    Path(__file__).resolve().parents[2] / "config" / "scraper" / config_name
 )
 
 config = initialize_config(default_config_path)
