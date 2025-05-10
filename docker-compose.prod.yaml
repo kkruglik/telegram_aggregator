@@ -26,7 +26,6 @@ services:
     container_name: tg_scraper
     restart: unless-stopped
     environment:
-      - GCP_PROJECT_ID=${GCP_PROJECT_ID}
       - CONFIG_NAME=config-prod.yaml
     volumes:
       - ./logs:/app/logs
