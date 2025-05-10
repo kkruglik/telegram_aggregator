@@ -26,9 +26,9 @@ loggers:
   news_aggregator:
     level: DEBUG
     handlers: [ console, file ]
-    propagate: false
+    propagate: true
 
 root:
   level: INFO
   handlers: [ console ]
-  propagate: false
+  propagate: true
