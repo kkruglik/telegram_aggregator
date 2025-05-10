@@ -199,24 +199,3 @@ def initialize_config(yaml_path: Path) -> AppConfig:
     app_config.load_from_secret_manager()
     logger.info("Configuration initialization complete")
     return app_config
-
-config_name = os.environ.get("CONFIG_NAME")
-
-assert config_name, "CONFIG_NAME environment variable not set"
-assert config_name.endswith(".yaml"), "CONFIG_NAME must end with .yaml"
-
-default_config_path = (
-    Path(__file__).resolve().parents[2] / "config" / "aggregator" / config_name
-)
-
-config = initialize_config(default_config_path)
-
-BOT_TOKEN = config.bot.token if config.bot else None
-DATABASE_URL = config.database.url if config.database else None
-DB_USER = config.database.user if config.database else None
-DB_PASSWORD = config.database.password if config.database else None
-DB_HOST = config.database.host if config.database else None
-DB_PORT = config.database.port if config.database else None
-DB_NAME = config.database.name if config.database else None
-GEMINI_API_KEY = config.gemini.token if config.gemini else None
-SCRAPER_URL = config.scraper.url if config.scraper else None
