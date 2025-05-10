@@ -32,7 +32,7 @@ class User:
         logger.debug(f"User {user_id} initialized")
 
     @classmethod
-    def set_bot(cls, bot: Bot):
+    def initialize(cls, bot: Bot):
         cls._bot = bot
 
     @property
