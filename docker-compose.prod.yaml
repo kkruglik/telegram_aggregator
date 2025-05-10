@@ -27,6 +27,7 @@ services:
     restart: unless-stopped
     environment:
       - GCP_PROJECT_ID=${GCP_PROJECT_ID}
+      - CONFIG_NAME=config-prod.yaml
     volumes:
       - ./logs:/app/logs
     depends_on:
@@ -42,12 +43,7 @@ services:
     container_name: tg_aggregator
     restart: unless-stopped
     environment:
-      - DB_HOST=postgres
-      - DB_USER=${DB_USER}
-      - DB_PASSWORD=${DB_PASSWORD}
-      - DB_PORT=5432
-      - GCP_PROJECT_ID=${GCP_PROJECT_ID}
-      - SCRAPER_URL=http://scraper:8000
+      - CONFIG_NAME=config-prod.yaml
     volumes:
       - ./logs:/app/logs
     depends_on:
