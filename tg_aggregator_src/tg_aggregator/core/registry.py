@@ -121,10 +121,12 @@ class UserRegistry:
 class FeedsRegistry:
     _feeds: dict[int, TelegramFeed] = {}
     _feeds_users_count: dict[int, int] = {}
+    _scraper_url = None
 
     @classmethod
-    async def initialize(cls) -> None:
+    async def initialize(cls, scraper_url: str) -> None:
         await cls._load_feeds_from_db()
+        cls._scraper_url = scraper_url
 
     @classmethod
     async def _load_feeds_from_db(cls) -> None:
@@ -151,7 +153,9 @@ class FeedsRegistry:
 
     @classmethod
     async def create_or_get_feed(cls, feed_name: str):
-        channel_id, channel_name = await get_channel_id(feed_name)
+        # TODO move this check to feed itself
+        channel_id, channel_name = await get_channel_id(feed_name, cls._scraper_url)
+        logger.info(f"Creating feed {feed_name} with id {channel_id} and name {channel_name}")
         if channel_id is None:
             raise ValueError(f"Feed {feed_name} not found.")
 
