@@ -11,10 +11,12 @@ from .core.feed import TelegramFeed
 from .core.registry import UserRegistry, FeedsRegistry
 from .core.user import User
 from .db.repository import DatabaseRepository
-from .utils.utils import load_yaml
+from .utils.utils import load_yaml, setup_cloud_logging
 
 logger = logging.getLogger("news_aggregator")
 logging.config.dictConfig(load_yaml("config/aggregator/logger.yaml"))
+
+setup_cloud_logging()
 
 
 async def main():
