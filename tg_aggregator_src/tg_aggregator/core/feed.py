@@ -12,6 +12,8 @@ logger = logging.getLogger("news_aggregator")
 
 class TelegramFeed:
     __slots__ = ("channel_id", "channel_name", "last_updated", "content")
+    _client = None
+    _scraper_url = None
 
     def __init__(self, channel_id: int, channel_name: str):
         self.channel_id = channel_id
@@ -19,12 +21,19 @@ class TelegramFeed:
         self.last_updated = None
         self.content: FeedContent = {"posts": {}}
 
-        logger.info(f"[BaseFeed] {channel_id=} initialized")
+        logger.info(f"TelegramFeed {channel_id=} initialized")
+
+    @classmethod
+    def initialize(cls, client, scraper_url: str):
+        cls._client = client
+        cls._scraper_url = scraper_url
 
     async def _get_todays_posts(self):
         try:
-            messages = await get_today_messages_by_channel_name(self.channel_name)
-            logger.info(f"[BaseFeed] {len(messages)} messages received")
+            messages = await get_today_messages_by_channel_name(
+                self.channel_name, self._scraper_url
+            )
+            logger.info(f"{len(messages)} messages received")
             updated_at = datetime.now()
             for message in messages["messages"]:
                 if message["id"] not in self.content["posts"]:
@@ -53,7 +62,7 @@ class TelegramFeed:
 
     async def _summarize_content(self):
         async def summarize_wrapper(post_id, text):
-            summary = await generate_summary(text)
+            summary = await generate_summary(client=self._client, input_text=text)
             return post_id, summary
 
         logger.info(f"Summarizing feed {self.channel_id}")
