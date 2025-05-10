@@ -127,6 +127,7 @@ class AppConfig:
         try:
             client = secretmanager.SecretManagerServiceClient()
             name = f"projects/{self.gcp.project_id}/secrets/{secret_id}/versions/{version_id}"
+            logger.info(f"Trying to access secret {name}...")
             response = client.access_secret_version(request={"name": name})
             return response.payload.data.decode("UTF-8")
         except Exception as e:
