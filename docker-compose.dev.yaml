@@ -27,10 +27,7 @@ services:
       dockerfile: tg_scraper_src/Dockerfile
     container_name: tg_scraper
     environment:
-      - API_ID=${API_ID}
-      - API_HASH=${API_HASH}
-      - TELEGRAM_SESSION_NAME=${TELEGRAM_SESSION_NAME}
-      - GCP_PROJECT_ID=${GCP_PROJECT_ID}
+      - CONFIG_NAME=config-local-docker.yaml
       - GOOGLE_APPLICATION_CREDENTIALS=/root/.config/gcloud/application_default_credentials.json
     ports:
       - "8000:8000"
@@ -38,6 +35,7 @@ services:
       - ./logs:/app/logs
       - ./tg_scraper_src:/app/tg_scraper_src
       - ~/.config/gcloud:/root/.config/gcloud
+      - ./telegram_scraper_local.session:/app/telegram_scraper_local.session
     depends_on:
       postgres:
         condition: service_healthy
@@ -50,18 +48,7 @@ services:
       dockerfile: tg_aggregator_src/Dockerfile
     container_name: tg_aggregator
     environment:
-      - DB_USER=${DB_USER}
-      - DB_PASSWORD=${DB_PASSWORD}
-      - DB_HOST=postgres
-      - DB_PORT=5432
-      - DB_NAME=${DB_NAME}
-      - BOT_TOKEN=${BOT_TOKEN}
-      - API_ID=${API_ID}
-      - API_HASH=${API_HASH}
-      - GEMINI_API_KEY=${GEMINI_API_KEY}
-      - SCRAPER_URL=http://scraper:8000
-      - GCP_PROJECT_ID=${GCP_PROJECT_ID}
-      - GOOGLE_APPLICATION_CREDENTIALS=/root/.config/gcloud/application_default_credentials.json
+      - CONFIG_NAME=config-local-docker.yaml
     volumes:
       - ./logs:/app/logs
       - ./tg_aggregator_src:/app/tg_aggregator_src
