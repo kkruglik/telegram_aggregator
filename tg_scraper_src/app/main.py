@@ -14,10 +14,12 @@ from .models import (
     ChannelIDResponse,
 )
 from .scraper import TelegramScraperQueue
-from .utils import load_yaml
+from .utils import load_yaml, setup_cloud_logging
 
 logger = logging.getLogger("telegram_scraper_service")
 logging.config.dictConfig(load_yaml("config/scraper/logger.yaml"))
+
+setup_cloud_logging()
 
 config_name = os.environ.get("CONFIG_NAME")
 
