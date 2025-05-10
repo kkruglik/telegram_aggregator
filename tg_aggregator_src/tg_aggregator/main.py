@@ -1,8 +1,13 @@
 import asyncio
 import logging.config
+import os
+from pathlib import Path
+
+from google import genai
 
 from .bot.bot import init_bot
-from .config import BOT_TOKEN, DATABASE_URL
+from .config import initialize_config
+from .core.feed import TelegramFeed
 from .core.registry import UserRegistry, FeedsRegistry
 from .core.user import User
 from .db.repository import DatabaseRepository
@@ -12,28 +17,26 @@ logger = logging.getLogger("news_aggregator")
 logging.config.dictConfig(load_yaml("config/aggregator/logger.yaml"))
 
 
-# TODO states of user are saved only locally with tg library
-# TODO refactor commands
-# TODO do i need a constant scraper.start()?
-# TODO Added TTL-based cache expiration to prevent unbounded memory growth
-# TODO Add sync when get user/feeds
-# TODO what if was no messages during the period
-# TODO add a documentation about bot logic, for now its really poorly documented
-# TODO should i use microservices for summarization and scraping?
-# TODO Telegram server says - Bad Request: message is too long
-# TODO update system of clearing feed posts, for now i am just deleting send posts from feed
-# TODO add loading summary to database, and when updating feed, check if summary is already there and skip it
-# TODO add post from scraper to database, and when updating feed, check if post is already there and skip it
-
-
 async def main():
-    await DatabaseRepository.initialize(DATABASE_URL)
+    config_name = os.environ.get("CONFIG_NAME")
 
-    bot, dp = init_bot(BOT_TOKEN)
+    assert config_name, "CONFIG_NAME environment variable not set"
+    assert config_name.endswith(".yaml"), "CONFIG_NAME must end with .yaml"
 
-    User.set_bot(bot)
+    config_path = Path(__file__).resolve().parents[2] / "config" / "aggregator" / config_name
 
-    await FeedsRegistry.initialize()
+    config = initialize_config(config_path)
+
+    client = genai.Client(api_key=config.gemini.token)
+
+    await DatabaseRepository.initialize(config.database.url)
+
+    bot, dp = init_bot(config.bot.token)
+
+    User.initialize(bot=bot)
+    TelegramFeed.initialize(client=client, scraper_url=config.scraper.url)
+
+    await FeedsRegistry.initialize(scraper_url=config.scraper.url)
     await UserRegistry.initialize()
 
     logger.info("Starting news aggregator")
