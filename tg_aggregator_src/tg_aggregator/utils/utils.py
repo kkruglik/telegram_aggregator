@@ -1,11 +1,13 @@
-import os
 import logging
 import logging.config
+import os
 from pathlib import Path
+
+import google.cloud.logging
+import yaml
 from timezonefinder import TimezoneFinder
 
-
-import yaml
+logger = logging.getLogger("news_aggregator")
 
 
 def load_yaml(path: str | Path) -> dict:
@@ -56,3 +58,16 @@ def get_timezone_string(latitude: float, longitude: float):
     tf = TimezoneFinder()
     timezone_str = tf.timezone_at(lng=longitude, lat=latitude)
     return timezone_str
+
+
+def setup_cloud_logging():
+    """Setup Google Cloud Logging."""
+    try:
+        cloud_logging_client = google.cloud.logging.Client()
+        cloud_logging_client.setup_logging(log_level=logging.INFO)
+
+        logger.info("Google Cloud Logging has been configured successfully")
+        return True
+    except Exception as e:
+        logger.error(f"Failed to setup Google Cloud Logging: {e}", exc_info=True)
+        return False
