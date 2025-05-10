@@ -9,7 +9,7 @@ from .db.repository import DatabaseRepository
 from .utils.utils import load_yaml
 
 logger = logging.getLogger("news_aggregator")
-logging.config.dictConfig(load_yaml("config/logger.yaml"))
+logging.config.dictConfig(load_yaml("config/aggregator/logger.yaml"))
 
 
 # TODO states of user are saved only locally with tg library
