@@ -5,7 +5,7 @@ database:
   name: news_aggregator
   password: null
 
-google_cloud_platform:
+gcp:
   project_id: tg-aggregator
 
 bot:
