@@ -1,0 +1,21 @@
+database:
+  user: newsapp
+  host: postgres
+  port: 5432
+  name: news_aggregator
+  password: null
+
+google_cloud_platform:
+  project_id: tg-aggregator
+
+bot:
+  token: null
+
+scraper:
+  host: scraper
+  session_name: telegram_scraper
+  api_hash: null
+  api_id: null
+
+gemini:
+  token: null
