@@ -3,7 +3,7 @@ import logging.config
 import os
 from pathlib import Path
 
-from google import genai
+from google import genai  # type: ignore
 
 from .bot.bot import init_bot
 from .config import initialize_config
@@ -14,7 +14,7 @@ from .db.repository import DatabaseRepository
 from .utils.utils import load_yaml, setup_cloud_logging
 
 logger = logging.getLogger("news_aggregator")
-logging.config.dictConfig(load_yaml("config/aggregator/logger.yaml"))
+logging.config.dictConfig(load_yaml("config/logger.yaml"))
 
 setup_cloud_logging()
 
@@ -25,7 +25,7 @@ async def main():
     assert config_name, "CONFIG_NAME environment variable not set"
     assert config_name.endswith(".yaml"), "CONFIG_NAME must end with .yaml"
 
-    config_path = Path(__file__).resolve().parents[2] / "config" / "aggregator" / config_name
+    config_path = Path(__file__).resolve().parents[2] / "config" / config_name
 
     config = initialize_config(config_path)
 

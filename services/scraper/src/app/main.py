@@ -2,7 +2,6 @@ import logging.config
 import os
 from pathlib import Path
 
-import uvicorn
 from fastapi import FastAPI, HTTPException
 
 from .config import initialize_config
@@ -17,18 +16,19 @@ from .scraper import TelegramScraperQueue
 from .utils import load_yaml, setup_cloud_logging
 
 logger = logging.getLogger("telegram_scraper_service")
-logging.config.dictConfig(load_yaml("config/scraper/logger.yaml"))
-
-setup_cloud_logging()
+logging.config.dictConfig(load_yaml("config/logger.yaml"))
 
 config_name = os.environ.get("CONFIG_NAME")
 
 assert config_name, "CONFIG_NAME environment variable not set"
 assert config_name.endswith(".yaml"), "CONFIG_NAME must end with .yaml"
 
-config_path = Path(__file__).resolve().parents[2] / "config" / "scraper" / config_name
+config_path = Path(__file__).resolve().parents[2] / "config" / config_name
 
 config = initialize_config(config_path)
+
+if config.gcp.project_id:
+    setup_cloud_logging()
 
 app = FastAPI(
     title="Telegram Scraper Service",
@@ -77,7 +77,9 @@ async def get_channel_id(request: ChannelIDRequest):
         return ChannelIDResponse(channel_id=channel_id, username=username)
     except Exception as e:
         logger.error(f"Error getting channel ID: {str(e)}", exc_info=True)
-        raise HTTPException(status_code=500, detail=f"Failed to get channel ID: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Failed to get channel ID: {str(e)}"
+        )
 
 
 @app.get("/health")
@@ -87,5 +89,6 @@ async def health_check():
 
 
 if __name__ == "__main__":
-    port = int(os.getenv("PORT", "8000"))
-    uvicorn.run("main:app", host="0.0.0.0", port=port, reload=True)
+    import uvicorn
+
+    uvicorn.run("src.app.main:app", host="0.0.0.0", port=8000, reload=True)

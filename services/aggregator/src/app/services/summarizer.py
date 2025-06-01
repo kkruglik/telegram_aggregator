@@ -1,9 +1,9 @@
 import logging
 from asyncio import Semaphore
 
-from google.genai import types
+from google.genai import types  # type: ignore
 
-from tg_aggregator_src.tg_aggregator.services.prompt import prompt as system_prompt
+from .prompt import prompt as system_prompt
 
 logger = logging.getLogger("news_aggregator")
 

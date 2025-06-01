@@ -74,7 +74,9 @@ class AppConfig:
             logger.info("GCP project ID not set, skipping Secret Manager")
             return
 
-        logger.info(f"Loading missing values from Secret Manager for project {self.gcp.project_id}")
+        logger.info(
+            f"Loading missing values from Secret Manager for project {self.gcp.project_id}"
+        )
 
         # Check all sections
         section_names = ["database", "scraper", "bot", "gemini"]
@@ -100,7 +102,9 @@ class AppConfig:
 
                     if secret_value:
                         setattr(section, field_name, secret_value)
-                        logger.info(f"Loaded {section_name}.{field_name} from Secret Manager")
+                        logger.info(
+                            f"Loaded {section_name}.{field_name} from Secret Manager"
+                        )
                     else:
                         # Log a warning but continue - some values are optional
                         logger.warning(
@@ -108,9 +112,13 @@ class AppConfig:
                         )
 
         if self.scraper and self.scraper.session_name:
-            session_path = os.path.join(self._base_dir, f"{self.scraper.session_name}.session")
+            session_path = os.path.join(
+                self._base_dir, f"{self.scraper.session_name}.session"
+            )
             if self._get_secret_file("telegram_scraper_session", session_path):
-                logger.info(f"Loaded Telegram session to {session_path} from Secret Manager")
+                logger.info(
+                    f"Loaded Telegram session to {session_path} from Secret Manager"
+                )
             else:
                 logger.warning("Could not load Telegram session from Secret Manager")
 
@@ -134,7 +142,9 @@ class AppConfig:
             logger.error(f"Error accessing secret {secret_id}: {e}")
             return None
 
-    def _get_secret_file(self, secret_id: str, file_path: str, version_id: str = "latest") -> bool:
+    def _get_secret_file(
+        self, secret_id: str, file_path: str, version_id: str = "latest"
+    ) -> bool:
         """Fetch a binary file from Secret Manager and save it to disk."""
         try:
             client = secretmanager.SecretManagerServiceClient()

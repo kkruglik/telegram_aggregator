@@ -1,4 +1,4 @@
-import aiohttp
+import aiohttp  # type: ignore
 
 
 async def get_channel_id(feed_name: str, service_url: str) -> tuple[int, str]:

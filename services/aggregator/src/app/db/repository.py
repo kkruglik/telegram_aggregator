@@ -4,18 +4,21 @@ from datetime import time
 
 import asyncpg
 
+from .migrations_manager import MigrationManager
+
 logger = logging.getLogger("news_aggregator")
 
 
 class DatabaseRepository:
     _connection_pool = None
+    _migration_manager = MigrationManager()
 
     @classmethod
     async def initialize(cls, dsn):
         """Initialize the connection pool"""
         logger.info("Initializing database connection pool")
         cls._connection_pool = await asyncpg.create_pool(dsn)
-        await cls.create_tables()
+        await cls._migration_manager.run_migrations(cls._connection_pool)
 
     @classmethod
     @asynccontextmanager
@@ -26,6 +29,11 @@ class DatabaseRepository:
 
         async with cls._connection_pool.acquire() as connection:
             yield connection
+
+    @classmethod
+    def create_migration(cls, name):
+        """Create a new migration file"""
+        return cls._migration_manager.create_migration(name)
 
     @classmethod
     async def create_tables(cls):
@@ -111,7 +119,7 @@ class DatabaseRepository:
 
     @classmethod
     async def create_user(
-        cls, user_id: int, notification_time: time = None, is_premium: bool = False
+        cls, user_id: int, notification_time: time| None = None, is_premium: bool = False
     ):
         """Create a new user"""
         async with cls.get_connection() as conn:

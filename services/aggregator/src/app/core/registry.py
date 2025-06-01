@@ -39,9 +39,9 @@ class UserRegistry:
         for row in users_feeds:
             user_id, feed_id = row["user_id"], row["feed_id"]
             user = cls._users.get(user_id, None)
-            feed = FeedsRegistry._feeds.get(feed_id, None)
+            feed = FeedsRegistry.feeds.get(feed_id, None)
             if user and feed:
-                user._user_feeds[feed_id] = feed
+                user.user_feeds[feed_id] = feed
                 logger.info(f"Added feed {feed.channel_name} to user {user.id}.")
             else:
                 logger.warning(f"User {user_id}|{feed_id} not found.")
@@ -69,15 +69,15 @@ class UserRegistry:
         return user
 
     @classmethod
-    def delete_user(cls, user_id) -> None:
+    async def delete_user(cls, user_id) -> None:
         logger.info(f"Deleting user {user_id}")
         user = cls._users[user_id]
 
-        feed_names = list(user._user_feeds.keys())
+        feed_names = list(user.user_feeds.keys())
         if feed_names:
             logger.info(f"Unsubscribing user {user_id} from feeds: {feed_names}")
             for feed_name in feed_names:
-                user.unsubscribe(feed_name)
+                await user.unsubscribe(feed_name)
 
         del cls._users[user_id]
         logger.info(f"User {user_id} deleted")
@@ -88,7 +88,17 @@ class UserRegistry:
         user = cls._users[user_id]
 
         notification_time = user.notification_time
+
+        if notification_time is None:
+            logger.error(f"User {user_id} has no notification time set.")
+            raise ValueError(f"User {user_id} has no notification time set.")
+
         user_timezone = user.timezone
+
+        if user_timezone is None:
+            logger.error(f"User {user_id} has no timezone set.")
+            raise ValueError(f"User {user_id} has no timezone set.")
+
         update_minute = (notification_time.minute - 5) % 60
         update_hour = (
             notification_time.hour
@@ -119,14 +129,14 @@ class UserRegistry:
 
 
 class FeedsRegistry:
-    _feeds: dict[int, TelegramFeed] = {}
-    _feeds_users_count: dict[int, int] = {}
-    _scraper_url = None
+    feeds: dict[int, TelegramFeed] = {}
+    feeds_users_count: dict[int, int] = {}
+    scraper_url = None
 
     @classmethod
     async def initialize(cls, scraper_url: str) -> None:
         await cls._load_feeds_from_db()
-        cls._scraper_url = scraper_url
+        cls.scraper_url = scraper_url
 
     @classmethod
     async def _load_feeds_from_db(cls) -> None:
@@ -134,50 +144,55 @@ class FeedsRegistry:
         existing_feeds = await DatabaseRepository.get_all_feeds()
         for feed in existing_feeds:
             channel_id, channel_name = feed["id"], feed["channel_name"]
-            cls._feeds[channel_id] = TelegramFeed(channel_id, channel_name)
-            cls._feeds_users_count[channel_id] = 1
+            cls.feeds[channel_id] = TelegramFeed(channel_id, channel_name)
+            cls.feeds_users_count[channel_id] = 1
             logger.info(f"Feed {channel_id}|{channel_name} loaded from db.")
 
         logger.info("Finished loading feeds from db.")
 
     @classmethod
     async def update_all_feeds(cls) -> None:
-        logger.info(f"Updating all {len(cls._feeds)} feeds")
-        tasks = [feed.update() for feed in cls._feeds.values()]
+        logger.info(f"Updating all {len(cls.feeds)} feeds")
+        tasks = [feed.update() for feed in cls.feeds.values()]
         await asyncio.gather(*tasks)
 
     @classmethod
     def get_feed_by_id(cls, feed_id: int) -> TelegramFeed:
         logger.info(f"Getting feed by id {feed_id}")
-        return cls._feeds[feed_id]
+        return cls.feeds[feed_id]
 
     @classmethod
     async def create_or_get_feed(cls, feed_name: str):
         # TODO move this check to feed itself
-        channel_id, channel_name = await get_channel_id(feed_name, cls._scraper_url)
+        if cls.scraper_url is None:
+            logger.error("Scraper URL is not set.")
+            raise ValueError("Scraper URL is not set.")
+
+        channel_id, channel_name = await get_channel_id(feed_name, cls.scraper_url)
+
         logger.info(f"Creating feed {feed_name} with id {channel_id} and name {channel_name}")
         if channel_id is None:
             raise ValueError(f"Feed {feed_name} not found.")
 
-        if channel_id in cls._feeds:
-            cls._feeds_users_count[channel_id] += 1
+        if channel_id in cls.feeds:
+            cls.feeds_users_count[channel_id] += 1
             logger.info(
-                f"Feed {feed_name} already exists, subscriber count increased to {cls._feeds_users_count[channel_id]}"
+                f"Feed {feed_name} already exists, subscriber count increased to {cls.feeds_users_count[channel_id]}"
             )
         else:
             await DatabaseRepository.create_feed(channel_id, channel_name)
-            cls._feeds[channel_id] = TelegramFeed(channel_id, channel_name)
-            cls._feeds_users_count[channel_id] = 1
+            cls.feeds[channel_id] = TelegramFeed(channel_id, channel_name)
+            cls.feeds_users_count[channel_id] = 1
             logger.info(f"New feed {channel_id} created with 1 subscriber")
 
-        return cls._feeds[channel_id]
+        return cls.feeds[channel_id]
 
     @classmethod
     def release_feed(cls, channel_id: int):
         # TODO fix channels_id/name confuse
-        if channel_id in cls._feeds:
-            cls._feeds_users_count[channel_id] -= 1
-            current_count = cls._feeds_users_count[channel_id]
+        if channel_id in cls.feeds:
+            cls.feeds_users_count[channel_id] -= 1
+            current_count = cls.feeds_users_count[channel_id]
             logger.info(f"Feed {channel_id} subscriber count decreased to {current_count}")
 
             # TODO _feeds_users_count logic is totaly broken

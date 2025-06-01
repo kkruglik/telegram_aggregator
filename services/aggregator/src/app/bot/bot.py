@@ -1,7 +1,7 @@
 import logging
 
-from aiogram import Bot, Dispatcher
-from aiogram.fsm.storage.memory import MemoryStorage
+from aiogram import Bot, Dispatcher  # type: ignore
+from aiogram.fsm.storage.memory import MemoryStorage  # type: ignore
 
 from .handlers.commands import router as commands_router
 
