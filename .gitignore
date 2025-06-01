@@ -175,3 +175,6 @@ telegram_scraper.session
 
 # PyPI configuration file
 .pypirc
+/logs/
+/services/aggregator/logs/
+/services/scraper/logs/
