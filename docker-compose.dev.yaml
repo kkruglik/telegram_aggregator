@@ -23,8 +23,8 @@ services:
 
   scraper:
     build:
-      context: .
-      dockerfile: tg_scraper_src/Dockerfile
+      context: ./services/scraper
+      dockerfile: Dockerfile
     container_name: tg_scraper
     environment:
       - CONFIG_NAME=config-local-docker.yaml
@@ -32,10 +32,10 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      - ./logs:/app/logs
-      - ./tg_scraper_src:/app/tg_scraper_src
+      - ./services/scraper/logs:/app/logs
+      - ./services/scraper/src:/app/src
       - ~/.config/gcloud:/root/.config/gcloud
-      - ./telegram_scraper_local.session:/app/telegram_scraper_local.session
+      - ./services/scraper/telegram_scraper_local.session:/app/telegram_scraper_local.session
     depends_on:
       postgres:
         condition: service_healthy
@@ -44,14 +44,14 @@ services:
 
   aggregator:
     build:
-      context: .
-      dockerfile: tg_aggregator_src/Dockerfile
+      context: ./services/aggregator
+      dockerfile: Dockerfile
     container_name: tg_aggregator
     environment:
       - CONFIG_NAME=config-local-docker.yaml
     volumes:
-      - ./logs:/app/logs
-      - ./tg_aggregator_src:/app/tg_aggregator_src
+      - ./services/aggregator/logs:/app/logs
+      - ./services/aggregator/tg_aggregator_src:/app/tg_aggregator_src
       - ~/.config/gcloud:/root/.config/gcloud
     depends_on:
       postgres:
