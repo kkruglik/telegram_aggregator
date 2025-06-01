@@ -21,14 +21,14 @@ services:
 
   scraper:
     build:
-      context: .
-      dockerfile: tg_scraper_src/Dockerfile
+      context: ./services/scraper
+      dockerfile: Dockerfile
     container_name: tg_scraper
     restart: unless-stopped
     environment:
       - CONFIG_NAME=config-prod.yaml
     volumes:
-      - ./logs:/app/logs
+      - ./services/scraper/logs:/app/logs
     depends_on:
       postgres:
         condition: service_healthy
@@ -37,14 +37,14 @@ services:
 
   aggregator:
     build:
-      context: .
+      context: ./services/aggregator
       dockerfile: tg_aggregator_src/Dockerfile
     container_name: tg_aggregator
     restart: unless-stopped
     environment:
       - CONFIG_NAME=config-prod.yaml
     volumes:
-      - ./logs:/app/logs
+      - ./services/aggregator/logs:/app/logs
     depends_on:
       postgres:
         condition: service_healthy
