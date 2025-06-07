@@ -109,12 +109,12 @@ format:
 # Run ruff linter
 .PHONY: ruff-check
 ruff-check:
-	$(PYTHON) -m ruff check tg_aggregator_src tg_scraper_src tests
+	$(PYTHON) -m ruff check services/aggregator services/scraper
 
 # Run ruff formatter
 .PHONY: ruff-format
 ruff-format:
-	$(PYTHON) -m ruff format tg_aggregator_src tg_scraper_src tests
+	$(PYTHON) -m ruff format services/aggregator services/scraper
 
 # Run both ruff check and format
 .PHONY: ruff
