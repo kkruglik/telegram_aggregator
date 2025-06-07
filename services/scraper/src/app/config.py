@@ -4,8 +4,8 @@ from dataclasses import dataclass, field, fields
 from pathlib import Path
 from typing import Dict, Optional, Any
 
-import yaml
-from google.cloud import secretmanager
+import yaml  # type: ignore
+from google.cloud import secretmanager  # type: ignore
 
 logger = logging.getLogger("news_aggregator")
 
@@ -85,7 +85,6 @@ class AppConfig:
                 continue
 
             section = getattr(self, section_name)
-            section_class_name = section.__class__.__name__
 
             # Get all fields for this section
             for field_obj in fields(section):
