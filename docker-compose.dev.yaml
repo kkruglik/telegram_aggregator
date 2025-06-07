@@ -51,7 +51,7 @@ services:
       - CONFIG_NAME=config-local-docker.yaml
     volumes:
       - ./services/aggregator/logs:/app/logs
-      - ./services/aggregator/tg_aggregator_src:/app/tg_aggregator_src
+      - ./services/aggregator/src:/app/src
       - ~/.config/gcloud:/root/.config/gcloud
     depends_on:
       postgres:
