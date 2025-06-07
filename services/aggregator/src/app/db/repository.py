@@ -2,7 +2,7 @@ import logging
 from contextlib import asynccontextmanager
 from datetime import time
 
-import asyncpg
+import asyncpg  # type: ignore
 
 from .migrations_manager import MigrationManager
 
