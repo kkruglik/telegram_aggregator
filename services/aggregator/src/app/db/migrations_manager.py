@@ -10,7 +10,7 @@ class MigrationManager:
     """Manages database migrations using plain SQL files"""
 
     def __init__(self, migrations_dir="migrations/sql"):
-        self.migrations_dir = Path(__name__).resolve().parent / migrations_dir
+        self.migrations_dir = Path(__file__).resolve().parent / migrations_dir
         self.migrations_dir.mkdir(parents=True, exist_ok=True)
 
     async def initialize_migrations_table(self, conn):
