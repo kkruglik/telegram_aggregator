@@ -178,3 +178,8 @@ telegram_scraper.session
 /logs/
 /services/aggregator/logs/
 /services/scraper/logs/
+
+services/aggregator/config/config-local-docker.yaml
+services/aggregator/config/config-local.yaml
+services/scraper/config/config-local.yaml
+services/scraper/config/config-local-docker.yaml
