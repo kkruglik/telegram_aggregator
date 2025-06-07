@@ -1,11 +1,9 @@
-import os
 import pytest
 import logging
 from pathlib import Path
 from unittest.mock import patch, MagicMock
 
 import yaml
-import google.cloud.logging
 
 from src.app.utils import load_yaml, setup_cloud_logging
 
