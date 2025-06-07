@@ -48,7 +48,7 @@ async def startup_event():
 
 
 @app.post("/messages_by_id", response_model=ChannelMessages)
-async def get_messages(request: ChannelRequestByID):
+async def get_messages_by_id(request: ChannelRequestByID):
     """Get today's messages from a Telegram channel"""
     try:
         result = await telegram_queue.get_today_messages_by_id(request.channel_id)
@@ -59,7 +59,7 @@ async def get_messages(request: ChannelRequestByID):
 
 
 @app.post("/messages_by_name", response_model=ChannelMessages)
-async def get_messages(request: ChannelRequestByName):
+async def get_messages_by_name(request: ChannelRequestByName):
     """Get today's messages from a Telegram channel"""
     try:
         result = await telegram_queue.get_today_messages_by_name(request.channel_name)
