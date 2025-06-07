@@ -50,12 +50,19 @@ class MigrationManager:
         """Run all pending migrations"""
         try:
             logger.info("Running database migrations")
+            logger.info(f"Migrations directory: {self.migrations_dir}")
             async with pool.acquire() as conn:
                 await self.initialize_migrations_table(conn)
                 applied_migrations = await self.get_applied_migrations(conn)
 
+                logger.info(f"Found {len(applied_migrations)} applied migration(s)")
+                logger.info(f"Applied migration(s): {applied_migrations}")
+
                 migration_files = sorted([f for f in os.listdir(self.migrations_dir)
                                           if f.endswith('.sql')])
+
+                logger.info(f"Found {len(migration_files)} migration(s)")
+                logger.info(f"Migration(s): {migration_files}")
 
                 applied_count = 0
 
@@ -63,7 +70,10 @@ class MigrationManager:
                     version = migration_file.split('_')[0]
                     name = '_'.join(migration_file.split('_')[1:]).replace('.sql', '')
 
+                    logger.info(f"Processing migration {version}: {name}")
+
                     if version not in applied_migrations:
+                        logger.info(f"Migration {version} not applied yet")
                         with open(os.path.join(self.migrations_dir, migration_file)) as f:
                             migration_sql = f.read()
 
