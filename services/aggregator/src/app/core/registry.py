@@ -214,6 +214,7 @@ class FeedsRegistry:
         channel_id, channel_name = await get_channel_id(normalized_feed_name, cls.scraper_url)
 
         logger.info(f"Creating feed {normalized_feed_name} with id {channel_id} and name {channel_name}")
+
         if channel_id is None:
             logger.warning(f"Feed {normalized_feed_name} not found.")
             return None
