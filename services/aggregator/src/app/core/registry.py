@@ -1,11 +1,12 @@
 import asyncio
 import logging
+from urllib.parse import urlparse
 
+from .feed import TelegramFeed
+from .user import User
 from ..db.repository import DatabaseRepository
 from ..services.tasks_scheduler import TasksScheduler
 from ..utils.scraper_utils import get_channel_id
-from .feed import TelegramFeed
-from .user import User
 
 logger = logging.getLogger("news_aggregator")
 
@@ -161,23 +162,66 @@ class FeedsRegistry:
         logger.info(f"Getting feed by id {feed_id}")
         return cls.feeds[feed_id]
 
+    @staticmethod
+    def normalize_channel_name(feed_name: str) -> str:
+        """
+        Normalize various channel name formats to @channel format.
+        Accepts:
+        - @channel -> @channel
+        - channel -> @channel
+        - https://t.me/channel -> @channel
+        - t.me/channel -> @channel
+        - https://telegram.me/channel -> @channel
+        Args:
+            feed_name: Channel name in any supported format
+        Returns:
+            Normalized channel name in @channel format
+        Raises:
+            ValueError: If channel name is invalid or empty
+        """
+        if not feed_name or not isinstance(feed_name, str):
+            raise ValueError("Channel name must be a non-empty string")
+
+        feed_name = feed_name.strip()
+
+        if feed_name.startswith(('http://', 'https://')):
+            parsed = urlparse(feed_name)
+            if parsed.netloc not in ['t.me', 'telegram.me']:
+                raise ValueError(f"Invalid Telegram URL domain: {parsed.netloc}")
+            channel_name = parsed.path.lstrip('/')
+        elif feed_name.startswith('t.me/'):
+            channel_name = feed_name[5:]
+        elif feed_name.startswith('@'):
+            channel_name = feed_name[1:]
+        else:
+            channel_name = feed_name
+        return f"@{channel_name}"
+
     @classmethod
-    async def create_or_get_feed(cls, feed_name: str):
+    async def create_or_get_feed(cls, feed_name: str) -> TelegramFeed | None:
         # TODO move this check to feed itself
         if cls.scraper_url is None:
             logger.error("Scraper URL is not set.")
             raise ValueError("Scraper URL is not set.")
 
-        channel_id, channel_name = await get_channel_id(feed_name, cls.scraper_url)
+        try:
+            normalized_feed_name = cls.normalize_channel_name(feed_name)
+            logger.info(f"Normalized '{feed_name}' to '{normalized_feed_name}'")
+        except ValueError as e:
+            logger.warning(f"Invalid channel name '{feed_name}': {e}")
+            return None
 
-        logger.info(f"Creating feed {feed_name} with id {channel_id} and name {channel_name}")
+        channel_id, channel_name = await get_channel_id(normalized_feed_name, cls.scraper_url)
+
+        logger.info(f"Creating feed {normalized_feed_name} with id {channel_id} and name {channel_name}")
         if channel_id is None:
-            raise ValueError(f"Feed {feed_name} not found.")
+            logger.warning(f"Feed {normalized_feed_name} not found.")
+            return None
 
         if channel_id in cls.feeds:
             cls.feeds_users_count[channel_id] += 1
             logger.info(
-                f"Feed {feed_name} already exists, subscriber count increased to {cls.feeds_users_count[channel_id]}"
+                f"Feed {normalized_feed_name} already exists, subscriber count increased to {cls.feeds_users_count[channel_id]}"
             )
         else:
             await DatabaseRepository.create_feed(channel_id, channel_name)
