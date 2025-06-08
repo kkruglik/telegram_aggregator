@@ -28,6 +28,11 @@ loggers:
     handlers: [ console, file ]
     propagate: true
 
+  aiogram.dispatcher:
+    level: CRITICAL
+    handlers: [ console, file ]
+    propagate: false
+
 root:
   level: INFO
   handlers: [ console ]
