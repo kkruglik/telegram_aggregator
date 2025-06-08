@@ -46,7 +46,7 @@ def create_time_selection_keyboard():
     for hour in hours:
         builder.button(text=hour, callback_data=f"time:{hour}")
 
-    builder.adjust(3)  # 3 buttons per row
+    builder.adjust(3)
     return builder.as_markup()
 
 
@@ -169,18 +169,23 @@ async def process_feed_name(message: Message, state: FSMContext):
     feed_name = message.text.strip()
 
     if not feed_name:
-        await message.answer("Send channel name in format @channel_name")
+        await message.answer("Send channel name in format @channel_name or https://t.me/channel_name")
         return
 
     user_id = message.from_user.id
     user = await UserRegistry.get_or_create_user(user_id)
     feed = await FeedsRegistry.create_or_get_feed(feed_name)
 
+    if feed is None:
+        await message.answer("❌ Channel not found. Please try again. "
+                             "Send channel name in format @channel_name or https://t.me/channel_name")
+        return
+
     result = await user.subscribe(feed)
 
     match result.status:
         case ResponseStatus.OK:
-            await message.answer(f"✅ You successfully subscribed for this channel: {feed_name}!")
+            await message.answer(f"✅ You successfully subscribed for this channel: {feed.channel_name}!")
         case ResponseStatus.LIMIT_REACHED:
             await message.answer(
                 "❌ You've reached the limit of feeds. Upgrade to premium to add more feeds!"
