@@ -126,7 +126,7 @@ class DatabaseRepository:
             return await conn.fetchrow(
                 """
                                        INSERT INTO users(id, notification_time, is_premium)
-                                       VALUES ($1, $2)
+                                       VALUES ($1, $2, $3)
                                        RETURNING *
                                        """,
                 user_id,
@@ -212,6 +212,7 @@ class DatabaseRepository:
             return await conn.fetchrow(
                 """
                                        INSERT INTO feeds(id, channel_name)
+                                       ON CONFLICT (id) DO NOTHING
                                        VALUES ($1, $2);
                                        """,
                 channel_id,
@@ -312,7 +313,7 @@ class DatabaseRepository:
             raise
 
     @classmethod
-    async def add_post_to_db(cls, post_id: int, text: str, channel_id: int, summary: str = None):
+    async def add_post_to_db(cls, post_id: int, text: str, channel_id: int, summary: str | None = None):
         """Add a new post to the content table"""
         try:
             async with cls.get_connection() as conn:
@@ -320,6 +321,7 @@ class DatabaseRepository:
                     """
                                              INSERT INTO content(post_id, text, summary, channel_id)
                                              VALUES ($1, $2, $3, $4)
+                                             ON CONFLICT (post_id) DO NOTHING
                                              RETURNING *
                                              """,
                     post_id,
@@ -327,8 +329,12 @@ class DatabaseRepository:
                     summary,
                     channel_id,
                 )
-                logger.info(f"Successfully added post {post_id} from channel {channel_id}")
-                return result
+                if result:
+                    logger.info(f"Successfully added new post {post_id} from channel {channel_id}")
+                    return result
+                else:
+                    logger.debug(f"Post {post_id} from channel {channel_id} already exists, skipping")
+                    return None
         except Exception as e:
             logger.error(f"Error adding post {post_id} from channel {channel_id}: {e}")
             raise
