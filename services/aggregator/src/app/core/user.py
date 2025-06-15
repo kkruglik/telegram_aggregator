@@ -17,11 +17,11 @@ class User:
     __slots__ = ("id", "user_feeds", "notification_time", "timezone", "is_premium")
 
     def __init__(
-        self,
-        user_id: int,
-        notification_time: time | None = None,
-        timezone: str | None = None,
-        is_premium: bool = False,
+            self,
+            user_id: int,
+            notification_time: time | None = None,
+            timezone: str | None = "EET",
+            is_premium: bool = False,
     ):
         self.id = user_id
         self.user_feeds: dict[int, TelegramFeed] = {}
@@ -39,9 +39,10 @@ class User:
     def is_user_registered(self):
         return all([self.notification_time, self.timezone])
 
-    def set_timezone(self, lat: float, lon: float):
+    async def set_timezone(self, lat: float, lon: float):
         logger.info(f"Setting location to {lat}, {lon}")
         self.timezone = get_timezone_string(lat, lon)
+        await DatabaseRepository.update_user(self.id, timezone=self.timezone)
         logger.info(f"Setting timezone to {self.timezone}")
 
     def set_notification_time(self, notification_time: time):
@@ -115,7 +116,7 @@ class User:
 
             if len(todays_feed) > MESSAGE_LIMIT:
                 for i in range(0, len(todays_feed), MESSAGE_LIMIT):
-                    todays_feed_part = todays_feed[i : i + MESSAGE_LIMIT]
+                    todays_feed_part = todays_feed[i: i + MESSAGE_LIMIT]
                     await self._bot.send_message(chat_id=self.id, text=todays_feed_part)
                     await asyncio.sleep(1)
 
