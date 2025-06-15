@@ -11,7 +11,7 @@ from .core.feed import TelegramFeed
 from .core.registry import UserRegistry, FeedsRegistry
 from .core.user import User
 from .db.repository import DatabaseRepository
-from .utils.utils import load_yaml, setup_cloud_logging
+from .utils.utils import load_yaml, setup_cloud_logging, set_bot_commands
 
 logger = logging.getLogger("news_aggregator")
 logging.config.dictConfig(load_yaml("config/logger.yaml"))
@@ -34,6 +34,8 @@ async def main():
     await DatabaseRepository.initialize(config.database.url)
 
     bot, dp = init_bot(config.bot.token)
+
+    await set_bot_commands(bot)
 
     User.initialize(bot=bot)
     TelegramFeed.initialize(client=client, scraper_url=config.scraper.url)
