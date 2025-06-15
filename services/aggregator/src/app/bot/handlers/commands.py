@@ -1,15 +1,15 @@
 import logging
 from datetime import time
 
-from aiogram import Router, types, F
-from aiogram.filters import Command, CommandStart
-from aiogram.fsm.context import FSMContext
-from aiogram.fsm.state import State, StatesGroup
-from aiogram.types import Message, ReplyKeyboardMarkup, KeyboardButton
-from aiogram.utils.keyboard import InlineKeyboardBuilder
+from aiogram import Router, types, F  # type: ignore
+from aiogram.filters import Command, CommandStart  # type: ignore
+from aiogram.fsm.context import FSMContext  # type: ignore
+from aiogram.fsm.state import State, StatesGroup  # type: ignore
+from aiogram.types import Message, ReplyKeyboardMarkup, KeyboardButton  # type: ignore
+from aiogram.utils.keyboard import InlineKeyboardBuilder  # type: ignore
 
-from ...core.registry import UserRegistry, FeedsRegistry
 from ...core.enums import ResponseStatus
+from ...core.registry import UserRegistry, FeedsRegistry
 
 logger = logging.getLogger("news_aggregator")
 
@@ -36,10 +36,15 @@ def create_time_selection_keyboard():
         "10:00",
         "11:00",
         "12:00",
+        "13:00",
         "14:00",
-        "17:30",
+        "15:00",
+        "16:00",
+        "17:00",
         "18:00",
+        "19:00",
         "20:00",
+        "21:00",
         "22:00",
     ]
 
@@ -55,24 +60,53 @@ async def start(message: Message, state: FSMContext):
     user = await UserRegistry.get_or_create_user(message.from_user.id)
     logger.info(f"New message from user {user}")
 
+    greeting = f"👋 Hello, {message.from_user.first_name}!\n\n"
+
     if user.is_user_registered:
+        commands_list = (
+            "📋 <b>Available Commands:</b>\n\n"
+            "➕ /subscribe - Subscribe to a news feed\n"
+            "📄 /list - View your subscribed feeds\n"
+            "➖ /unsubscribe - Remove a feed subscription\n"
+            "⏰ /notification_time - Change your notification time"
+        )
+
         await message.answer(
-            f"Welcome back! Your notification time is set to {user.notification_time}."
+            greeting +
+            f"📰 Your personalized news feed is active and your notification time is set to {user.notification_time}.\n\n"
+            f"{commands_list}",
+            parse_mode="HTML"
         )
         return
 
+    bot_description = (
+        "📰 <b>Welcome to Evening Telegram Bot!</b>\n\n"
+        "🔔 Subscribe to multiple channels and receive a personalized daily digest\n"
+        "⏰ Get all your news in one convenient message at your preferred time\n"
+        "🌍 Stay informed with content tailored to your timezone\n\n"
+        "Let's get you set up in just a few steps!"
+    )
+
+    location_message = (
+        "📍 <b>Location for Timezone (Optional)</b>\n\n"
+        "🔐 <b>Privacy-safe</b>: We only use your location to calculate timezone - no data is stored or tracked.\n\n"
+        "⏭️ <b>Skip available</b>: Default timezone is EET (Eastern European Time)\n"
+        "🏙️ <i>Cities: Helsinki, Athens, Cairo, Kiev, Bucharest, Sofia</i>"
+    )
+
     location_keyboard = ReplyKeyboardMarkup(
         keyboard=[
-            [KeyboardButton(text="Share My Location", request_location=True)],
-            [KeyboardButton(text="Skip Location")],
+            [KeyboardButton(text="📍 Share My Location", request_location=True)],
+            [KeyboardButton(text="⏭️ Skip - Use EET Default")],
         ],
         resize_keyboard=True,
         one_time_keyboard=True,
     )
 
     await message.answer(
-        "Please share your location so we can provide news relevant to your timezone.",
+        greeting + bot_description + "\n\n" + location_message,
         reply_markup=location_keyboard,
+        parse_mode="HTML"
     )
 
     await state.set_state(RegistrationStates.waiting_for_location)
@@ -112,12 +146,12 @@ async def process_location(message: Message, state: FSMContext):
     if message.location:
         lat = message.location.latitude
         lng = message.location.longitude
-        user.set_timezone(lat, lng)
+        await user.set_timezone(lat, lng)
 
         await message.answer(
             f"Thanks for sharing your location! Your timezone is set to {user.timezone}."
         )
-    elif message.text == "Skip Location":
+    elif message.text == "⏭️ Skip - Use EET Default":
         await message.answer("Location skipped. Your default timezone will be EET.")
     else:
         await message.answer("Please use the buttons to share your location or skip this step.")
@@ -137,7 +171,7 @@ async def process_notification_time(callback: types.CallbackQuery, state: FSMCon
     user_id = callback.from_user.id
     user = await UserRegistry.get_or_create_user(user_id)
 
-    logger.info(f"Callback data: {callback.data}")
+    logger.info(f"Received notification time for user {user_id}")
 
     selected_time = callback.data.split("time:")[1]
 
@@ -292,10 +326,13 @@ async def cmd_upgrade_premium(message: Message):
 async def echo(message: Message):
     """Echo all other messages - fallback handler"""
     await message.answer(
-        "I didn't understand that command. Try using one of these:\n\n"
-        "/start - Start the bot\n"
-        "/subscribe - Subscribe to a feed\n"
-        "/list - List your subscribed feeds\n"
-        "/unsubscribe - Unsubscribe from a feed\n"
-        "/notification_time - Change your notification time\n"
+        "🤔 I didn't understand that command.\n\n"
+        "📋 <b>Available Commands:</b>\n\n"
+        "🚀 /start - Start or restart the bot\n"
+        "➕ /subscribe - Subscribe to a news feed\n"
+        "📄 /list - View your subscribed feeds\n"
+        "➖ /unsubscribe - Remove a feed subscription\n"
+        "⏰ /notification_time - Set your daily news time\n\n"
+        "💡 <i>Tip: Just send a command to get started!</i>",
+        parse_mode="HTML"
     )
