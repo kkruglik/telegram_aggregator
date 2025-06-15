@@ -212,8 +212,8 @@ class DatabaseRepository:
             return await conn.fetchrow(
                 """
                                        INSERT INTO feeds(id, channel_name)
-                                       ON CONFLICT (id) DO NOTHING
-                                       VALUES ($1, $2);
+                                       VALUES ($1, $2)
+                                       ON CONFLICT (id) DO NOTHING;
                                        """,
                 channel_id,
                 channel_name,
