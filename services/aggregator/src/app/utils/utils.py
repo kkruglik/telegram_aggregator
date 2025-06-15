@@ -5,6 +5,8 @@ from pathlib import Path
 
 import google.cloud.logging
 import yaml
+from aiogram import Bot
+from aiogram.types import BotCommand, BotCommandScopeDefault
 from timezonefinder import TimezoneFinder
 
 logger = logging.getLogger("news_aggregator")
@@ -71,3 +73,16 @@ def setup_cloud_logging():
     except Exception as e:
         logger.error(f"Failed to setup Google Cloud Logging: {e}", exc_info=True)
         return False
+
+
+async def set_bot_commands(bot: Bot):
+    """Set up bot command menu"""
+    commands = [
+        BotCommand(command="start", description="Start the bot"),
+        BotCommand(command="subscribe", description="Subscribe to a feed"),
+        BotCommand(command="list", description="List subscribed feeds"),
+        BotCommand(command="unsubscribe", description="Unsubscribe from a feed"),
+        BotCommand(command="notification_time", description="Change notification time"),
+    ]
+
+    await bot.set_my_commands(commands, BotCommandScopeDefault())
