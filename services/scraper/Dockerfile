@@ -34,7 +34,7 @@ COPY --chown=appuser:appuser src/ ./src/
 COPY --chown=appuser:appuser config/ ./config/
 
 # Create logs directory with proper permissions
-RUN mkdir -p logs && chown appuser:appuser logs
+RUN mkdir -p logs
 
 # Switch to non-root user
 USER appuser
