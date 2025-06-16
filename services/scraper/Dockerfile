@@ -19,10 +19,6 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 # Production stage
 FROM python:3.13-slim
 
-# Create non-root user with explicit UID/GID
-RUN groupadd -g 1000 appuser && \
-   useradd -u 1000 -g appuser -m -s /bin/bash appuser
-
 ENV PYTHONDONTWRITEBYTECODE=1 \
    PYTHONUNBUFFERED=1 \
    PYTHONPATH=/app \
