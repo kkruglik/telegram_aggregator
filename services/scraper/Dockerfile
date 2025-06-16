@@ -27,17 +27,14 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 WORKDIR /app
 
 # Copy virtual environment from builder with proper ownership
-COPY --from=builder --chown=appuser:appuser /app/.venv /app/.venv
+COPY --from=builder  /app/.venv /app/.venv
 
 # Copy application code with proper ownership
-COPY --chown=appuser:appuser src/ ./src/
-COPY --chown=appuser:appuser config/ ./config/
+COPY src/ ./src/
+COPY config/ ./config/
 
 # Create logs directory with proper permissions
 RUN mkdir -p logs
-
-# Switch to non-root user
-USER appuser
 
 EXPOSE 8000
 
