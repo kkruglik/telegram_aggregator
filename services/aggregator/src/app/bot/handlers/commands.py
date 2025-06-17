@@ -81,9 +81,10 @@ async def start(message: Message, state: FSMContext):
 
     bot_description = (
         "📰 <b>Welcome to Evening Telegram Bot!</b>\n\n"
-        "🔔 Subscribe to multiple channels and receive a personalized daily digest\n"
-        "⏰ Get all your news in one convenient message at your preferred time\n"
-        "🌍 Stay informed with content tailored to your timezone\n\n"
+        "🤖 Get AI-summarized news from your favorite Telegram channels\n"
+        "📅 Collects last 24 hours of posts and creates smart summaries\n"
+        "🔗 Each summary includes a link to the original post\n"
+        "⏰ Delivered once daily at your chosen time\n\n"
         "Let's get you set up in just a few steps!"
     )
 
