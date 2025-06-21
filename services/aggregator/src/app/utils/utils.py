@@ -3,11 +3,10 @@ import logging.config
 import os
 from pathlib import Path
 
-import google.cloud.logging
-import yaml
-from aiogram import Bot
-from aiogram.types import BotCommand, BotCommandScopeDefault
-from timezonefinder import TimezoneFinder
+import google.cloud.logging  # type: ignore
+import yaml  # type: ignore
+from aiogram import Bot  # type: ignore
+from aiogram.types import BotCommand, BotCommandScopeDefault  # type: ignore
 
 logger = logging.getLogger("news_aggregator")
 
@@ -22,7 +21,7 @@ def load_yaml(path: str | Path) -> dict:
 
 
 def setup_logging(
-    default_path="logging_config.yaml", default_level=logging.INFO, env_key="LOG_CONFIG"
+        default_path="logging_config.yaml", default_level=logging.INFO, env_key="LOG_CONFIG"
 ):
     """Setup logging configuration from YAML file
 
@@ -55,13 +54,6 @@ def setup_logging(
         logging.basicConfig(level=default_level)
 
 
-def get_timezone_string(latitude: float, longitude: float):
-    """Get IANA timezone identifier from coordinates"""
-    tf = TimezoneFinder()
-    timezone_str = tf.timezone_at(lng=longitude, lat=latitude)
-    return timezone_str
-
-
 def setup_cloud_logging():
     """Setup Google Cloud Logging."""
     try:
@@ -83,6 +75,7 @@ async def set_bot_commands(bot: Bot):
         BotCommand(command="list", description="List subscribed feeds"),
         BotCommand(command="unsubscribe", description="Unsubscribe from a feed"),
         BotCommand(command="notification_time", description="Change notification time"),
+        BotCommand(command="timezone", description="Change timezone"),
     ]
 
     await bot.set_my_commands(commands, BotCommandScopeDefault())
