@@ -5,7 +5,6 @@ from datetime import time
 from aiogram import Bot  # type: ignore
 
 from ..db.repository import DatabaseRepository
-from ..utils.utils import get_timezone_string
 from .feed import TelegramFeed
 from .enums import ResponseStatus, UserResponse
 
@@ -39,9 +38,9 @@ class User:
     def is_user_registered(self):
         return all([self.notification_time, self.timezone])
 
-    async def set_timezone(self, lat: float, lon: float):
-        logger.info(f"Setting location to {lat}, {lon}")
-        self.timezone = get_timezone_string(lat, lon)
+    async def set_timezone(self, timezone: str):
+        logger.info(f"Setting user timezone: {timezone}")
+        self.timezone = timezone
         await DatabaseRepository.update_user(self.id, timezone=self.timezone)
         logger.info(f"Setting timezone to {self.timezone}")
 
