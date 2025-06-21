@@ -16,7 +16,6 @@ COPY pyproject.toml uv.lock ./
 RUN --mount=type=cache,target=/root/.cache/uv \
    uv sync --frozen
 
-# Production stage
 FROM python:3.13-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
@@ -26,14 +25,11 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
-# Copy virtual environment from builder with proper ownership
 COPY --from=builder  /app/.venv /app/.venv
 
-# Copy application code with proper ownership
 COPY src/ ./src/
 COPY config/ ./config/
 
-# Create logs directory with proper permissions
 RUN mkdir -p logs
 
 EXPOSE 8000
