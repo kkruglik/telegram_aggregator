@@ -87,18 +87,32 @@ async def process_unsubscribe_callback(callback_query: types.CallbackQuery):
     try:
         feed_id = int(callback_query.data.replace("__unsub__", ""))
         user_id = callback_query.from_user.id
-
         user = await UserRegistry.get_or_create_user(user_id)
+        result = await user.unsubscribe(feed_id)
 
-        await user.unsubscribe(feed_id)
-        FeedsRegistry.release_feed(feed_id)
+        match result.status:
+            case ResponseStatus.OK:
+                await callback_query.message.edit_text(
+                    "✅ You successfully unsubscribed from the channel.\n\n"
+                    "Use /subscribe to add new feeds or /list to see your remaining subscriptions.",
+                    parse_mode="HTML",
+                    reply_markup=None
+                )
+                FeedsRegistry.release_feed(feed_id)
 
-        await callback_query.message.edit_text(
-            "✅ You successfully unsubscribed from the channel.\n\n"
-            "Use /subscribe to add new feeds or /list to see your remaining subscriptions.",
-            parse_mode="HTML",
-            reply_markup=None
-        )
+            case ResponseStatus.UNKNOWN_ERROR:
+                await callback_query.message.edit_text(
+                    "❌ Sorry, there was a technical issue. Please try again later.",
+                    parse_mode="HTML",
+                    reply_markup=None
+                )
+            case _:
+                await callback_query.message.edit_text(
+                    "❌ Sorry, there was a technical issue. Please try again later.",
+                    parse_mode="HTML",
+                    reply_markup=None
+                )
+
         await callback_query.answer()
 
     except ValueError:
