@@ -71,12 +71,15 @@ class User:
         if channel_id in self.user_feeds:
             logger.info(f"User {self.id} unsubscribing from feed {channel_id}")
             del self.user_feeds[channel_id]
+            # todo check if user reeally unsubscribed
             await DatabaseRepository.unsubscribe_from_feed(self.id, channel_id)
             logger.info(f"User {self.id} now subscribed to {len(self.user_feeds)} feeds")
+            return UserResponse.success()
         else:
             logger.warning(
                 f"User {self.id} tried to unsubscribe from non-existent feed {channel_id}"
             )
+            return UserResponse.error(ResponseStatus.UNKNOWN_ERROR)
 
     def get_user_feeds(self):
         logger.debug(f"Retrieved feed list for user {self.id}")
