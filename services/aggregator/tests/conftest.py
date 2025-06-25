@@ -7,11 +7,10 @@ import pytest  # type: ignore
 
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from unittest.mock import Mock, patch, call, AsyncMock
+from unittest.mock import Mock, patch, AsyncMock
 
 from app.core.user import User  # type: ignore
 from app.core.feed import TelegramFeed  # type: ignore
-from app.core.enums import ResponseStatus  # type: ignore
 
 
 @pytest.fixture
