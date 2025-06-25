@@ -1,181 +1,161 @@
-# from unittest.mock import MagicMock
-#
-# import pytest
-#
-# from tg_aggregator_src.core.registry import UserRegistry, FeedsRegistry
-# from tg_aggregator_src.core.user import User
-#
-#
-# @pytest.fixture
-# def clear_registries():
-#     """Fixture to clear registry data before each test"""
-#     UserRegistry._users = {}
-#     FeedsRegistry._feeds = {}
-#     FeedsRegistry._feeds_users_count = {}
-#
-#
-# class TestUserRegistry:
-#     def test_register_user(self, clear_registries):
-#         """Test that a user can be registered properly"""
-#         user = User(1)
-#         assert 1 in UserRegistry._users
-#         assert UserRegistry._users[1] == user
-#
-#     def test_register_duplicate_user(self, clear_registries):
-#         """Test that registering a duplicate user raises an error"""
-#         User(1)  # First registration
-#         with pytest.raises(ValueError):
-#             User(1)  # Should raise ValueError for duplicate
-#
-#     def test_get_user(self, clear_registries):
-#         """Test retrieving a user from the registry"""
-#         user = User(1)
-#         retrieved_user = UserRegistry.get_user(1)
-#         assert user == retrieved_user
-#
-#     def test_get_nonexistent_user(self, clear_registries):
-#         """Test that getting a non-existent user raises KeyError"""
-#         with pytest.raises(KeyError):
-#             UserRegistry.get_user(999)
-#
-#     def test_delete_user(self, clear_registries):
-#         """Test that a user can be deleted from the registry"""
-#         User(1)
-#         UserRegistry.delete_user(1)
-#         assert 1 not in UserRegistry._users
-#
-#     def test_delete_user_unsubscribes_feeds(self, clear_registries):
-#         """Test that deleting a user unsubscribes them from all feeds"""
-#         user = User(1)
-#         user.subscribe("CNN")
-#         user.subscribe("BBC")
-#
-#         # Verify feeds exist before deletion
-#         assert "CNN" in FeedsRegistry._feeds
-#         assert "BBC" in FeedsRegistry._feeds
-#
-#         UserRegistry.delete_user(1)
-#
-#         # Both feeds should be removed as no other users are subscribed
-#         assert "CNN" not in FeedsRegistry._feeds
-#         assert "BBC" not in FeedsRegistry._feeds
-#
-#
-# class TestFeedsRegistry:
-#     def test_create_feed(self, clear_registries):
-#         """Test creating a new feed"""
-#         feed = FeedsRegistry.create_or_get_feed("CNN")
-#         assert "CNN" in FeedsRegistry._feeds
-#         assert FeedsRegistry._feeds["CNN"] == feed
-#         assert FeedsRegistry._feeds_users_count["CNN"] == 1
-#
-#     def test_get_existing_feed(self, clear_registries):
-#         """Test getting an existing feed increments count"""
-#         feed1 = FeedsRegistry.create_or_get_feed("CNN")
-#         feed2 = FeedsRegistry.create_or_get_feed("CNN")
-#         assert feed1 is feed2  # Same object returned
-#         assert FeedsRegistry._feeds_users_count["CNN"] == 2
-#
-#     def test_release_feed(self, clear_registries):
-#         """Test releasing a feed decrements count"""
-#         FeedsRegistry.create_or_get_feed("CNN")
-#         FeedsRegistry.create_or_get_feed("CNN")  # Count should be 2
-#
-#         FeedsRegistry.release_feed("CNN")
-#         assert FeedsRegistry._feeds_users_count["CNN"] == 1
-#         assert "CNN" in FeedsRegistry._feeds  # Feed still exists
-#
-#     def test_release_last_feed_reference(self, clear_registries):
-#         """Test releasing the last reference removes the feed"""
-#         FeedsRegistry.create_or_get_feed("CNN")
-#         FeedsRegistry.release_feed("CNN")
-#         assert "CNN" not in FeedsRegistry._feeds
-#         assert "CNN" not in FeedsRegistry._feeds_users_count
-#
-#     def test_update_feed(self, clear_registries, monkeypatch):
-#         """Test that updating a feed calls the update method"""
-#         mock_update = MagicMock()
-#         monkeypatch.setattr('tg_aggregator_src.core.feed.Feed.update', mock_update)
-#
-#         FeedsRegistry.create_or_get_feed("CNN")
-#         FeedsRegistry.update_feed("CNN")
-#         assert mock_update.call_count == 1
-#
-#     def test_update_all_feeds(self, clear_registries, monkeypatch):
-#         """Test that updating all feeds calls update on each feed"""
-#         mock_update = MagicMock()
-#         monkeypatch.setattr('tg_aggregator_src.core.feed.Feed.update', mock_update)
-#
-#         FeedsRegistry.create_or_get_feed("CNN")
-#         FeedsRegistry.create_or_get_feed("BBC")
-#         FeedsRegistry.update_all_feeds()
-#         assert mock_update.call_count == 2
-#
-#
-# class TestUser:
-#     def test_user_creation(self, clear_registries):
-#         """Test user is created with correct ID"""
-#         user = User(42)
-#         assert user.id == 42
-#         assert len(user._user_feeds) == 0
-#
-#     def test_subscribe(self, clear_registries):
-#         """Test user can subscribe to a feed"""
-#         user = User(1)
-#         user.subscribe("CNN")
-#         assert "CNN" in user._user_feeds
-#         assert user._user_feeds["CNN"] == FeedsRegistry._feeds["CNN"]
-#
-#     def test_unsubscribe(self, clear_registries):
-#         """Test user can unsubscribe from a feed"""
-#         user = User(1)
-#         user.subscribe("CNN")
-#         user.unsubscribe("CNN")
-#         assert "CNN" not in user._user_feeds
-#
-#     def test_unsubscribe_nonexistent(self, clear_registries):
-#         """Test unsubscribing from a non-existent feed doesn't error"""
-#         user = User(1)
-#         # Should not raise any exception
-#         user.unsubscribe("NonExistentFeed")
-#
-#     def test_get_user_feeds(self, clear_registries):
-#         """Test retrieving user feeds"""
-#         user = User(1)
-#         user.subscribe("CNN")
-#         user.subscribe("BBC")
-#
-#         feeds = user.get_users_feeds()
-#         assert len(feeds) == 2
-#         assert "CNN" in feeds
-#         assert "BBC" in feeds
-#
-#
-# class TestFeedSharing:
-#     """Integration tests for interactions between users and feeds"""
-#
-#     def test_shared_feed_between_users(self, clear_registries):
-#         """Test that multiple users can share the same feed object"""
-#         user1 = User(1)
-#         user2 = User(2)
-#
-#         user1.subscribe("CNN")
-#         user2.subscribe("CNN")
-#
-#         # Both users should have the exact same feed object
-#         assert user1._user_feeds["CNN"] is user2._user_feeds["CNN"]
-#         assert FeedsRegistry._feeds_users_count["CNN"] == 2
-#
-#     def test_feed_only_removed_when_all_unsubscribe(self, clear_registries):
-#         """Test that a feed is only removed when all users unsubscribe"""
-#         user1 = User(1)
-#         user2 = User(2)
-#
-#         user1.subscribe("CNN")
-#         user2.subscribe("CNN")
-#
-#         user1.unsubscribe("CNN")
-#         assert "CNN" in FeedsRegistry._feeds  # Feed should still exist
-#
-#         user2.unsubscribe("CNN")
-#         assert "CNN" not in FeedsRegistry._feeds  # Feed should be gone
+from unittest.mock import call
+
+import pytest  # type: ignore
+
+from app.core.enums import ResponseStatus  # type: ignore
+
+
+@pytest.mark.asyncio
+async def test_standard_user_subscribe_success(standard_user, mock_database, feed_factory):
+    """Test successful subscription with correct expectations"""
+    user_id = standard_user.id
+    feed = feed_factory(channel_id=98765)
+
+    assert len(standard_user.user_feeds) == 0
+
+    result = await standard_user.subscribe(feed)
+
+    assert result.status == ResponseStatus.OK
+    assert feed.channel_id in standard_user.user_feeds
+    assert mock_database.subscribe_to_feed.call_count == 1
+    mock_database.subscribe_to_feed.assert_called_once_with(user_id, feed.channel_id)
+
+
+@pytest.mark.asyncio
+async def test_standard_user_subscribe_five_channels_success(standard_user, mock_database, feed_factory):
+    user_id = standard_user.id
+    expected_calls = []
+
+    for channel_id in range(1, 6):
+        mock_feed = feed_factory(channel_id=channel_id)
+        result = await standard_user.subscribe(mock_feed)
+        expected_calls.append(call(user_id, channel_id))
+        assert result.status == ResponseStatus.OK
+        assert mock_feed.channel_id in standard_user.user_feeds
+
+    assert mock_database.subscribe_to_feed.call_count == 5
+    mock_database.subscribe_to_feed.assert_has_calls(expected_calls)
+
+
+@pytest.mark.asyncio
+async def test_standard_user_subscribe_limit_reached(standard_user, mock_database, feed_factory):
+    user_id = standard_user.id
+    expected_calls = []
+
+    for channel_id in range(5):
+        mock_feed = feed_factory(channel_id=channel_id)
+        result = await standard_user.subscribe(mock_feed)
+
+        assert result.status == ResponseStatus.OK
+        assert mock_feed.channel_id in standard_user.user_feeds
+        expected_calls.append(call(user_id, channel_id))
+
+    mock_feed = feed_factory(channel_id=99)
+    result = await standard_user.subscribe(mock_feed)
+
+    assert result.status == ResponseStatus.LIMIT_REACHED
+    assert mock_feed.channel_id not in standard_user.user_feeds
+
+    assert mock_database.subscribe_to_feed.call_count == 5
+    mock_database.subscribe_to_feed.assert_has_calls(expected_calls)
+
+
+@pytest.mark.asyncio
+async def test_premium_user_subscribe_success(premium_user, mock_database, feed_factory):
+    user_id = premium_user.id
+    expected_calls = []
+
+    for channel_id in range(6):
+        mock_feed = feed_factory(channel_id=channel_id)
+        result = await premium_user.subscribe(mock_feed)
+
+        assert result.status == ResponseStatus.OK
+        assert mock_feed.channel_id in premium_user.user_feeds
+        expected_calls.append(call(user_id, channel_id))
+
+    assert mock_database.subscribe_to_feed.call_count == 6
+    mock_database.subscribe_to_feed.assert_has_calls(expected_calls)
+
+
+@pytest.mark.asyncio
+async def test_standard_user_unsubscribe_success(standard_user, mock_database, feed_factory):
+    """Test unsubscribing from an existing feed"""
+    channel_id = 1
+    feed = feed_factory(channel_id=channel_id)
+
+    subscribe_result = await standard_user.subscribe(feed)
+    assert subscribe_result.status == ResponseStatus.OK
+
+    result = await standard_user.unsubscribe(channel_id)
+
+    assert result.status == ResponseStatus.OK
+    assert channel_id not in standard_user.user_feeds
+    assert mock_database.unsubscribe_from_feed.call_count == 1
+    mock_database.unsubscribe_from_feed.assert_called_once_with(standard_user.id, channel_id)
+
+
+@pytest.mark.parametrize("channel_id,expected_status", [
+    (123, ResponseStatus.OK),
+    (456, ResponseStatus.OK),
+    (999999, ResponseStatus.OK),
+])
+@pytest.mark.asyncio
+async def test_subscribe_different_channels(standard_user, mock_database, feed_factory, channel_id, expected_status):
+    """Test subscription to different channel IDs"""
+    feed = feed_factory(channel_id=channel_id)
+
+    result = await standard_user.subscribe(feed)
+
+    assert result.status == expected_status
+    assert channel_id in standard_user.user_feeds
+    mock_database.subscribe_to_feed.assert_called_once_with(standard_user.id, channel_id)
+
+
+@pytest.mark.asyncio
+async def test_unsubscribe_all_feeds(standard_user, mock_database, feed_factory):
+    """Test unsubscribing from all feeds one by one"""
+
+    for i in range(5):
+        feed = feed_factory(channel_id=i)
+        result = await standard_user.subscribe(feed)
+        assert result.status == ResponseStatus.OK
+
+    assert len(standard_user.user_feeds) == 5
+
+    for i in range(5):
+        result = await standard_user.unsubscribe(channel_id=i)
+        assert result.status == ResponseStatus.OK
+
+    assert len(standard_user.user_feeds) == 0
+
+    assert mock_database.subscribe_to_feed.call_count == 5
+    assert mock_database.unsubscribe_from_feed.call_count == 5
+
+
+@pytest.mark.asyncio
+async def test_upgrade_user_to_premium(standard_user, mock_database, feed_factory):
+    """Test upgrading user to premium status"""
+    for i in range(5):
+        feed = feed_factory(channel_id=i)
+        result = await standard_user.subscribe(feed)
+        assert result.status == ResponseStatus.OK
+
+    assert len(standard_user.user_feeds) == 5
+    assert mock_database.subscribe_to_feed.call_count == 5
+    assert not standard_user.is_premium
+
+    new_feed = feed_factory(channel_id=6)
+    result = await standard_user.subscribe(new_feed)
+    assert result.status == ResponseStatus.LIMIT_REACHED
+    assert len(standard_user.user_feeds) == 5
+
+    await standard_user.upgrade_user_to_premium()
+    assert mock_database.update_user.call_count == 1
+    assert standard_user.is_premium
+    mock_database.update_user.assert_called_once_with(standard_user.id, is_premium=True)
+
+    result = await standard_user.subscribe(new_feed)
+    assert result.status == ResponseStatus.OK
+    assert mock_database.subscribe_to_feed.call_count == 6
+    assert len(standard_user.user_feeds) == 6
+
