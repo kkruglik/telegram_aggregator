@@ -108,24 +108,35 @@ class User:
                 logger.info(f"Feed {feed_name} is empty, skipping")
                 continue
 
-            todays_feed = f"{feed.channel_name} feed: \n\n"
+            feed_header = f"<b>@{feed.channel_name}</b> feed: \n\n"
             feed_content = feed.content["posts"]
             post_ids = list(feed_content.keys())
+
+            current_message = feed_header
+
             for post_id in post_ids:
                 post_content = feed_content[post_id]
-                todays_feed += f"{post_content['summary']} \n{post_content['url']}\n\n---\n\n"
-                del feed_content[post_id]
+                post_text = f"{post_content['summary']} \n{post_content['url']}\n\n---\n\n"
 
-            if len(todays_feed) > MESSAGE_LIMIT:
-                for i in range(0, len(todays_feed), MESSAGE_LIMIT):
-                    todays_feed_part = todays_feed[i: i + MESSAGE_LIMIT]
-                    await self._bot.send_message(chat_id=self.id, text=todays_feed_part)
+                if len(current_message + post_text) > MESSAGE_LIMIT:
+                    await self._bot.send_message(
+                        chat_id=self.id,
+                        text=current_message,
+                        parse_mode="HTML"
+                    )
                     await asyncio.sleep(1)
 
-            else:
+                    current_message = feed_header + post_text
+                else:
+                    current_message += post_text
+
+                del feed_content[post_id]
+
+            if current_message != feed_header:
                 await self._bot.send_message(
                     chat_id=self.id,
-                    text=todays_feed,
+                    text=current_message,
+                    parse_mode="HTML"
                 )
                 await asyncio.sleep(1)
 
