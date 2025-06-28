@@ -38,7 +38,9 @@ async def cmd_upgrade_premium(message: Message):
         await message.answer("You already have premium subscription.")
         return
 
-    await user.upgrade_user_to_premium()
+    await message.answer("Premium is not available yet.")
+
+    # await user.upgrade_user_to_premium()
 
 
 @router.message()
