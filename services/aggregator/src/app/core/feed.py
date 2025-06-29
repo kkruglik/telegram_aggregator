@@ -37,7 +37,7 @@ class TelegramFeed:
             )
             logger.info(f"{len(messages)} messages received")
             updated_at = datetime.now()
-            for message in messages["messages"]:
+            for message in reversed(messages["messages"]):
                 if message["id"] not in self.content["posts"]:
                     message_data: Post = {
                         "updated_at": updated_at,
