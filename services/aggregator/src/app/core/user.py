@@ -108,7 +108,7 @@ class User:
                 logger.info(f"Feed {feed_name} is empty, skipping")
                 continue
 
-            feed_header = f"<b>@{feed.channel_name}</b> feed: \n\n"
+            feed_header = f"<b>@{feed.channel_name} feed</b>: \n\n"
             feed_content = feed.content["posts"]
             post_ids = list(feed_content.keys())
 
