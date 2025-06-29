@@ -2,10 +2,10 @@ import asyncio
 import logging
 from datetime import datetime
 
-from ..services.summarizer import generate_summary
 from ..data_types import FeedContent, Post
-from ..utils.scraper_utils import get_today_messages_by_channel_name
 from ..db.repository import DatabaseRepository
+from ..services.summarizer import generate_summary
+from ..utils.scraper_utils import get_today_messages_by_channel_name
 
 logger = logging.getLogger("news_aggregator")
 
