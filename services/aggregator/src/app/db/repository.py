@@ -5,6 +5,7 @@ from datetime import time
 import asyncpg  # type: ignore
 
 from .migrations_manager import MigrationManager
+from ..core.enums import Response, ResponseStatus
 
 logger = logging.getLogger("news_aggregator")
 
@@ -119,16 +120,16 @@ class DatabaseRepository:
 
     @classmethod
     async def create_user(
-        cls, user_id: int, notification_time: time| None = None, is_premium: bool = False
+            cls, user_id: int, notification_time: time | None = None, is_premium: bool = False
     ):
         """Create a new user"""
         async with cls.get_connection() as conn:
             return await conn.fetchrow(
                 """
-                                       INSERT INTO users(id, notification_time, is_premium)
-                                       VALUES ($1, $2, $3)
-                                       RETURNING *
-                                       """,
+                INSERT INTO users(id, notification_time, is_premium)
+                VALUES ($1, $2, $3)
+                RETURNING *
+                """,
                 user_id,
                 notification_time,
                 is_premium,
@@ -211,10 +212,10 @@ class DatabaseRepository:
         async with cls.get_connection() as conn:
             return await conn.fetchrow(
                 """
-                                       INSERT INTO feeds(id, channel_name)
-                                       VALUES ($1, $2)
-                                       ON CONFLICT (id) DO NOTHING;
-                                       """,
+                INSERT INTO feeds(id, channel_name)
+                VALUES ($1, $2)
+                ON CONFLICT (id) DO NOTHING;
+                """,
                 channel_id,
                 channel_name,
             )
@@ -237,11 +238,11 @@ class DatabaseRepository:
 
                 existing = await conn.fetchrow(
                     """
-                                               SELECT *
-                                               FROM users_feeds
-                                               WHERE user_id = $1
-                                                 AND feed_id = $2
-                                               """,
+                    SELECT *
+                    FROM users_feeds
+                    WHERE user_id = $1
+                      AND feed_id = $2
+                    """,
                     user_id,
                     channel_id,
                 )
@@ -252,10 +253,10 @@ class DatabaseRepository:
 
                 return await conn.fetchrow(
                     """
-                                           INSERT INTO users_feeds(user_id, feed_id)
-                                           VALUES ($1, $2)
-                                           RETURNING *
-                                           """,
+                    INSERT INTO users_feeds(user_id, feed_id)
+                    VALUES ($1, $2)
+                    RETURNING *
+                    """,
                     user_id,
                     channel_id,
                 )
@@ -264,11 +265,11 @@ class DatabaseRepository:
                 logger.info(f"Race condition: User {user_id} was subscribed to feed {channel_id}")
                 return await conn.fetchrow(
                     """
-                                           SELECT *
-                                           FROM users_feeds
-                                           WHERE user_id = $1
-                                             AND feed_id = $2
-                                           """,
+                    SELECT *
+                    FROM users_feeds
+                    WHERE user_id = $1
+                      AND feed_id = $2
+                    """,
                     user_id,
                     channel_id,
                 )
@@ -284,11 +285,11 @@ class DatabaseRepository:
             async with cls.get_connection() as conn:
                 existing_subscription = await conn.fetchrow(
                     """
-                                                            SELECT user_id
-                                                            FROM users_feeds
-                                                            WHERE user_id = $1
-                                                              AND feed_id = $2;
-                                                            """,
+                    SELECT user_id
+                    FROM users_feeds
+                    WHERE user_id = $1
+                      AND feed_id = $2;
+                    """,
                     user_id,
                     channel_id,
                 )
@@ -299,11 +300,11 @@ class DatabaseRepository:
 
                 return await conn.execute(
                     """
-                                          DELETE
-                                          FROM users_feeds
-                                          WHERE user_id = $1
-                                            AND feed_id = $2;
-                                          """,
+                    DELETE
+                    FROM users_feeds
+                    WHERE user_id = $1
+                      AND feed_id = $2;
+                    """,
                     user_id,
                     channel_id,
                 )
@@ -313,31 +314,56 @@ class DatabaseRepository:
             raise
 
     @classmethod
-    async def add_post_to_db(cls, post_id: int, text: str, channel_id: int, summary: str | None = None):
+    async def add_post_to_db(cls, post_id: int, text: str, channel_id: int, summary: str | None = None) -> Response:
         """Add a new post to the content table"""
         try:
             async with cls.get_connection() as conn:
                 result = await conn.fetchrow(
                     """
-                                             INSERT INTO content(post_id, text, summary, channel_id)
-                                             VALUES ($1, $2, $3, $4)
-                                             ON CONFLICT (post_id) DO NOTHING
-                                             RETURNING *
-                                             """,
+                    INSERT INTO content(post_id, text, summary, channel_id)
+                    VALUES ($1, $2, $3, $4)
+                    ON CONFLICT (post_id, channel_id) DO NOTHING
+                    RETURNING post_id, channel_id
+                    """,
                     post_id,
                     text,
                     summary,
                     channel_id,
                 )
+
                 if result:
-                    logger.info(f"Successfully added new post {post_id} from channel {channel_id}")
-                    return result
+                    logger.info(f"Successfully added post {post_id}/{channel_id}")
+
+                    return Response.success(
+                        post_id=result['post_id'],
+                        channel_id=result['channel_id']
+                    )
                 else:
-                    logger.debug(f"Post {post_id} from channel {channel_id} already exists, skipping")
-                    return None
+                    logger.info(f"Post {post_id}/{channel_id} already exists in database, skipping")
+
+                    return Response.error(
+                        status=ResponseStatus.ALREADY_EXISTS,
+                        post_id=post_id,
+                        channel_id=channel_id
+                    )
+
+        except asyncpg.UniqueViolationError as e:
+            logger.error(f"Unique constraint violation for post {post_id}/{channel_id}: {e}")
+            return Response.error(
+                status=ResponseStatus.CONSTRAINT_VIOLATION,
+                post_id=post_id,
+                channel_id=channel_id,
+                error_details=str(e)
+            )
+
         except Exception as e:
-            logger.error(f"Error adding post {post_id} from channel {channel_id}: {e}")
-            raise
+            logger.error(f"Error adding post {post_id}/{channel_id}: {e}")
+            return Response.error(
+                status=ResponseStatus.DATABASE_ERROR,
+                post_id=post_id,
+                channel_id=channel_id,
+                error_details=str(e)
+            )
 
     @classmethod
     async def update_post_summary(cls, post_id: int, summary: str):
@@ -346,11 +372,11 @@ class DatabaseRepository:
             async with cls.get_connection() as conn:
                 result = await conn.fetchrow(
                     """
-                                             UPDATE content
-                                             SET summary = $2
-                                             WHERE post_id = $1
-                                             RETURNING *
-                                             """,
+                    UPDATE content
+                    SET summary = $2
+                    WHERE post_id = $1
+                    RETURNING *
+                    """,
                     post_id,
                     summary,
                 )
@@ -364,19 +390,22 @@ class DatabaseRepository:
             raise
 
     @classmethod
-    async def has_summary(cls, post_id: int) -> bool:
-        """Check if post exists and has a non-empty summary"""
+    async def get_post_summary(cls, channel_id: int, post_id: int):
         try:
             async with cls.get_connection() as conn:
                 result = await conn.fetchrow(
                     """
-                                             SELECT summary
-                                             FROM content
-                                             WHERE post_id = $1
-                                             """,
-                    post_id,
+                    SELECT channel_id, post_id, summary
+                    FROM content
+                    WHERE post_id = $1
+                      AND channel_id = $2
+                      AND summary IS NOT NULL
+                    """,
+                    post_id, channel_id,
                 )
-                return bool(result and result["summary"])
+                logger.info(f"Found existing summary for post {post_id}/{channel_id}" if result else
+                            f"No existing summary for post {post_id}/{channel_id}")
+                return result
         except Exception as e:
-            logger.error(f"Error checking summary for post {post_id}: {e}")
+            logger.error(f"Error getting summary for post {post_id}/{channel_id}: {e}")
             raise
