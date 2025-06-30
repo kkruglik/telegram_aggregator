@@ -6,7 +6,7 @@ from aiogram import Bot  # type: ignore
 
 from ..db.repository import DatabaseRepository
 from .feed import TelegramFeed
-from .enums import ResponseStatus, UserResponse
+from .enums import ResponseStatus, Response
 
 logger = logging.getLogger("news_aggregator")
 
@@ -48,24 +48,24 @@ class User:
         logger.info(f"Setting notification time to {notification_time}")
         self.notification_time = notification_time
 
-    async def subscribe(self, feed: TelegramFeed) -> UserResponse:
+    async def subscribe(self, feed: TelegramFeed) -> Response:
         logger.info(f"User {self.id} subscribing to feed {feed.channel_id}")
 
         if feed.channel_id in self.user_feeds:
             logger.info(f"User {self.id} already subscribed to feed {feed.channel_id}, skipping")
-            return UserResponse.error(ResponseStatus.ALREADY_SUBSCRIBED)
+            return Response.error(ResponseStatus.ALREADY_SUBSCRIBED)
 
         if not self.is_premium and len(self.user_feeds) >= 5:
             logger.info(f"User {self.id} exceeded max number of feeds, skipping")
-            return UserResponse.error(ResponseStatus.LIMIT_REACHED)
+            return Response.error(ResponseStatus.LIMIT_REACHED)
 
         try:
             self.user_feeds[feed.channel_id] = feed
             await DatabaseRepository.subscribe_to_feed(self.id, feed.channel_id)
-            return UserResponse.success()
+            return Response.success()
         except Exception as e:
             logger.error(f"Failed to subscribe user {self.id} to feed {feed.channel_id}: {e}")
-            return UserResponse.error(ResponseStatus.DATABASE_ERROR)
+            return Response.error(ResponseStatus.DATABASE_ERROR)
 
     async def unsubscribe(self, channel_id: int):
         if channel_id in self.user_feeds:
@@ -74,12 +74,12 @@ class User:
             # todo check if user reeally unsubscribed
             await DatabaseRepository.unsubscribe_from_feed(self.id, channel_id)
             logger.info(f"User {self.id} now subscribed to {len(self.user_feeds)} feeds")
-            return UserResponse.success()
+            return Response.success()
         else:
             logger.warning(
                 f"User {self.id} tried to unsubscribe from non-existent feed {channel_id}"
             )
-            return UserResponse.error(ResponseStatus.UNKNOWN_ERROR)
+            return Response.error(ResponseStatus.UNKNOWN_ERROR)
 
     def get_user_feeds(self):
         logger.debug(f"Retrieved feed list for user {self.id}")
