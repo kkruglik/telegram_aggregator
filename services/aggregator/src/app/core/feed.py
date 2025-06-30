@@ -2,6 +2,7 @@ import asyncio
 import logging
 from datetime import datetime
 
+from .enums import ResponseStatus
 from ..data_types import FeedContent, Post
 from ..db.repository import DatabaseRepository
 from ..services.summarizer import generate_summary
@@ -64,10 +65,6 @@ class TelegramFeed:
         logger.info(f"Feed {self.channel_id} updated.")
 
     async def _summarize_content(self):
-        async def summarize_wrapper(input_post_id, input_text):
-            summary = await generate_summary(client=self._client, input_text=input_text)
-            return input_post_id, summary
-
         logger.info(f"Summarizing feed {self.channel_id}")
 
         tasks = []
@@ -75,12 +72,12 @@ class TelegramFeed:
         for post_id in self.content["posts"].keys():
             if self.content["posts"][post_id]["summary"] is None:
                 text = self.content["posts"][post_id]["text"]
-                tasks.append(summarize_wrapper(post_id, text))
+                tasks.append(self._get_or_generate_summary(self.channel_id, post_id, text))
 
         results = await asyncio.gather(*tasks)
 
-        for post_id, response in results:
-            self.content["posts"][post_id]["summary"] = response.text
+        for post_id, summary in results:
+            self.content["posts"][post_id]["summary"] = summary
 
         logger.info(f"Summarizing feed {self.channel_id} completed.")
 
@@ -90,11 +87,31 @@ class TelegramFeed:
     async def _add_content_to_db(self):
         for post_id, post_data in self.content["posts"].items():
             logger.info(f"Adding post {post_id} to database")
-            await DatabaseRepository.add_post_to_db(
+            result = await DatabaseRepository.add_post_to_db(
                 post_id, post_data["text"], self.channel_id, post_data["summary"]
             )
+
+            match result.status:
+                case ResponseStatus.OK:
+                    logger.info(f"Post {post_id} added to database")
+                case ResponseStatus.ALREADY_EXISTS:
+                    logger.info(f"Post {post_id} already exists in database")
+                case _:
+                    logger.info(
+                        f"Post {post_id} not added to database. Error: {result.status}, message: {result.message}")
 
     def clear_cache(self):
         """Clearly cached posts and reset the last updated timestamp"""
         self.content["posts"] = {}
         logger.info(f"Cache cleared for channel {self.channel_id}")
+
+    async def _get_or_generate_summary(self, channel_id: int, post_id: int, input_text: str):
+        logger.info(f"Processing summary for post {post_id} from channel {channel_id}")
+        if result := await DatabaseRepository.get_post_summary(channel_id, post_id):
+            logger.info(f"Found summary in database for post {post_id} from channel {channel_id}")
+            summary = result['summary']
+            return post_id, summary
+
+        logger.info(f"No summary found in database for post {post_id} from channel {channel_id}. Generating a new one")
+        new_summary = await generate_summary(client=self._client, input_text=input_text)
+        return post_id, new_summary.text
