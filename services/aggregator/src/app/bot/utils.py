@@ -27,16 +27,25 @@ def create_timezone_selection_keyboard():
         "🇨🇿 Prague (CET)": "Europe/Prague",
 
         # EET (UTC+2)
-        "🇫🇮 Helsinki (EET)": "Europe/Helsinki",
         "🇪🇪 Tallinn (EET)": "Europe/Tallinn",
         "🇱🇻 Riga (EET)": "Europe/Riga",
         "🇱🇹 Vilnius (EET)": "Europe/Vilnius",
         "🇺🇦 Kiev (EET)": "Europe/Kiev",
 
         # MSK (UTC+3)
-        "🇷🇺 Moscow (MSK)": "Europe/Moscow",
-        "🇧🇾 Minsk (MSK)": "Europe/Minsk",
+        "🏳️‍🌈 Moscow (MSK)": "Europe/Moscow",
+        "🏳️‍🌈 Minsk (MSK)": "Europe/Minsk",
         "🇹🇷 Istanbul (TRT)": "Europe/Istanbul",
+
+        # GET/AMT (UTC+4)
+        "🇦🇲 Yerevan (AMT)": "Asia/Yerevan",
+        "🇬🇪 Tbilisi (GET)": "Asia/Tbilisi",
+
+        # ALMT (UTC+5)
+        "🇰🇿 Almaty (ALMT)": "Asia/Almaty",
+
+        # For Astana, use Asia/Almaty (same timezone as of 2024)
+        "🇰🇿 Astana (ALMT)": "Asia/Almaty",
     }
 
     for name, timezone in timezone_map.items():
