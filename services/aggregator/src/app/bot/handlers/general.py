@@ -29,20 +29,6 @@ async def cmd_list(message: Message):
         await message.answer("Type /start to start the bot.")
 
 
-@router.message(Command("upgrade_premium"))
-async def cmd_upgrade_premium(message: Message):
-    """Handle /upgrade_premium command - start the upgrade premium process"""
-    user_id = message.from_user.id
-    user = await UserRegistry.get_or_create_user(user_id)
-    if user.is_premium:
-        await message.answer("You already have premium subscription.")
-        return
-
-    await message.answer("Premium is not available yet.")
-
-    # await user.upgrade_user_to_premium()
-
-
 @router.message()
 async def echo(message: Message):
     """Echo all other messages - fallback handler"""
