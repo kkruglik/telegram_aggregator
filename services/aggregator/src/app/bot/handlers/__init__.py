@@ -1,6 +1,6 @@
 from aiogram import Router  # type: ignore
 
-from . import registration, subscription, general
+from . import registration, subscription, general, premium
 
 
 def setup_handlers() -> Router:
@@ -9,6 +9,7 @@ def setup_handlers() -> Router:
 
     main_router.include_router(registration.router)
     main_router.include_router(subscription.router)
+    main_router.include_router(premium.router)
     main_router.include_router(general.router)
 
     return main_router
