@@ -7,6 +7,7 @@ from ..data_types import FeedContent, Post
 from ..db.repository import DatabaseRepository
 from ..services.summarizer import generate_summary
 from ..utils.scraper_utils import get_today_messages_by_channel_name
+from ..utils.utils import log_async_performance
 
 logger = logging.getLogger("news_aggregator")
 
@@ -29,6 +30,7 @@ class TelegramFeed:
         cls._client = client
         cls._scraper_url = scraper_url
 
+    @log_async_performance()
     async def _get_todays_posts(self) -> None:
         if self._scraper_url is None:
             raise ValueError("Scraper URL is not set")
@@ -56,6 +58,7 @@ class TelegramFeed:
         except Exception as e:
             logger.error(f"Error updating {self.channel_id}: {str(e)}")
 
+    @log_async_performance()
     async def update(self):
         """Update the feed with new content from the Telegram channel"""
         logger.info(f"Updating feed {self.channel_id} from channel {self.channel_id}")
@@ -64,6 +67,7 @@ class TelegramFeed:
         await self._add_content_to_db()
         logger.info(f"Feed {self.channel_id} updated.")
 
+    @log_async_performance()
     async def _summarize_content(self):
         logger.info(f"Summarizing feed {self.channel_id}")
 
@@ -84,6 +88,7 @@ class TelegramFeed:
     def _create_post_url(self, message_id: int):
         return f"https://t.me/{self.channel_name}/{message_id}"
 
+    @log_async_performance()
     async def _add_content_to_db(self):
         for post_id, post_data in self.content["posts"].items():
             logger.info(f"Adding post {post_id} to database")
@@ -105,6 +110,7 @@ class TelegramFeed:
         self.content["posts"] = {}
         logger.info(f"Cache cleared for channel {self.channel_id}")
 
+    @log_async_performance()
     async def _get_or_generate_summary(self, channel_id: int, post_id: int, input_text: str):
         logger.info(f"Processing summary for post {post_id} from channel {channel_id}")
         if result := await DatabaseRepository.get_post_summary(channel_id, post_id):

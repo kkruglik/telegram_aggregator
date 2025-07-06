@@ -25,8 +25,8 @@ handlers:
 loggers:
   news_aggregator:
     level: DEBUG
-    handlers: [ console, file ]
-    propagate: true
+    handlers: [ console ]
+    propagate: false
 
   aiogram.dispatcher:
     level: CRITICAL
