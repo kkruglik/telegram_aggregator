@@ -26,11 +26,11 @@ loggers:
   news_aggregator:
     level: DEBUG
     handlers: [ console ]
-    propagate: false
+    propagate: true
 
   aiogram.dispatcher:
     level: CRITICAL
-    handlers: [ console, file ]
+    handlers: [ console ]
     propagate: false
 
 root:
