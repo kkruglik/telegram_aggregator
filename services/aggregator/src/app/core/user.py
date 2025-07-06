@@ -7,6 +7,7 @@ from aiogram import Bot  # type: ignore
 from ..db.repository import DatabaseRepository
 from .feed import TelegramFeed
 from .enums import ResponseStatus, Response
+from ..utils.utils import log_async_performance
 
 logger = logging.getLogger("news_aggregator")
 
@@ -38,6 +39,7 @@ class User:
     def is_user_registered(self):
         return all([self.notification_time, self.timezone])
 
+    @log_async_performance()
     async def set_timezone(self, timezone: str):
         logger.info(f"Setting user timezone: {timezone}")
         self.timezone = timezone
@@ -48,6 +50,7 @@ class User:
         logger.info(f"Setting notification time to {notification_time}")
         self.notification_time = notification_time
 
+    @log_async_performance()
     async def subscribe(self, feed: TelegramFeed) -> Response:
         logger.info(f"User {self.id} subscribing to feed {feed.channel_id}")
 
@@ -67,6 +70,7 @@ class User:
             logger.error(f"Failed to subscribe user {self.id} to feed {feed.channel_id}: {e}")
             return Response.error(ResponseStatus.DATABASE_ERROR)
 
+    @log_async_performance()
     async def unsubscribe(self, channel_id: int):
         if channel_id in self.user_feeds:
             logger.info(f"User {self.id} unsubscribing from feed {channel_id}")
@@ -85,6 +89,7 @@ class User:
         logger.debug(f"Retrieved feed list for user {self.id}")
         return self.user_feeds
 
+    @log_async_performance()
     async def update_users_feeds(self):
         logger.info(f"Updating users feeds {self.id}: {len(self.user_feeds)} feeds")
         tasks = [feed.update() for feed in self.user_feeds.values()]
@@ -100,6 +105,7 @@ class User:
 
         logger.info(f"Completed feed updates for user {self.id}")
 
+    @log_async_performance()
     async def send_feed_update(self):
         logger.info(f"Send feed update for user {self.id}")
         MESSAGE_LIMIT = 4096
@@ -143,6 +149,7 @@ class User:
         for feed in self.user_feeds.values():
             feed.clear_cache()
 
+    @log_async_performance()
     async def save_user_to_database(self):
         """Save the current user state to a database"""
         logger.info(f"Saving user {self.id} to database")
@@ -152,6 +159,7 @@ class User:
             timezone=self.timezone,
         )
 
+    @log_async_performance()
     async def upgrade_user_to_premium(self):
         """Upgrade user to premium status"""
         logger.info(f"Upgrading user {self.id} to premium")
