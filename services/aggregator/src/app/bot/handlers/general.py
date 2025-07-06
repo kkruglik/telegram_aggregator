@@ -5,6 +5,7 @@ from aiogram.filters import Command  # type: ignore
 from aiogram.types import Message  # type: ignore
 
 from ...core.registry import UserRegistry
+from ..messages import get_message
 
 logger = logging.getLogger("news_aggregator")
 
@@ -22,9 +23,11 @@ async def cmd_list(message: Message):
 
         if feeds:
             feed_list = "\n".join([f"• {feed.channel_name}" for feed in feeds.values()])
-            await message.answer(f"Your subscriptions:\n\n{feed_list}")
+            answer = get_message('subscriptions_list')
+            answer = answer.format(feed_list=feed_list)
+            await message.answer(answer)
         else:
-            await message.answer("You dont have any subscriptions. Type /subscribe to add some.")
+            await message.answer(get_message('no_subscriptions'))
     except KeyError:
         await message.answer("Type /start to start the bot.")
 
