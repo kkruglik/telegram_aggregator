@@ -1,7 +1,10 @@
 import logging
 import logging.config
 import os
+import time
+from functools import wraps
 from pathlib import Path
+from typing import Callable
 
 import google.cloud.logging  # type: ignore
 import yaml  # type: ignore
@@ -63,7 +66,7 @@ def setup_cloud_logging():
         logger.info("Google Cloud Logging has been configured successfully")
         return True
     except Exception as e:
-        logger.error(f"Failed to setup Google Cloud Logging: {e}", exc_info=True)
+        logger.error(f"Failed to setup Google Cloud Logging: {e}")
         return False
 
 
@@ -79,3 +82,51 @@ async def set_bot_commands(bot: Bot):
     ]
 
     await bot.set_my_commands(commands, BotCommandScopeDefault())
+
+
+def log_async_performance():
+    """Decorator specifically for async functions"""
+
+    def decorator(func: Callable):
+        operation_name = func.__name__
+
+        @wraps(func)
+        async def async_wrapper(*args, **kwargs):
+            start_time = time.perf_counter()
+            try:
+                result = await func(*args, **kwargs)
+                duration = time.perf_counter() - start_time
+                logger.info(f"{operation_name} completed in {duration:.3f}s")
+                return result
+            except Exception as e:
+                duration = time.perf_counter() - start_time
+                logger.error(f"{operation_name} failed after {duration:.3f}s: {e}")
+                raise
+
+        return async_wrapper
+
+    return decorator
+
+
+def log_sync_performance():
+    """Decorator specifically for sync functions"""
+
+    def decorator(func: Callable):
+        operation_name = func.__name__
+
+        @wraps(func)
+        def sync_wrapper(*args, **kwargs):
+            start_time = time.perf_counter()
+            try:
+                result = func(*args, **kwargs)
+                duration = time.perf_counter() - start_time
+                logger.info(f"{operation_name} completed in {duration:.3f}s")
+                return result
+            except Exception as e:
+                duration = time.perf_counter() - start_time
+                logger.error(f"{operation_name} failed after {duration:.3f}s: {e}")
+                raise
+
+        return sync_wrapper
+
+    return decorator
