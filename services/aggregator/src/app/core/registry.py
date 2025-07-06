@@ -200,6 +200,7 @@ class FeedsRegistry:
     @classmethod
     async def create_or_get_feed(cls, feed_name: str) -> TelegramFeed | None:
         # TODO move this check to feed itself
+        # TODO add check if user send a channel and not group or user
         if cls.scraper_url is None:
             logger.error("Scraper URL is not set.")
             raise ValueError("Scraper URL is not set.")
