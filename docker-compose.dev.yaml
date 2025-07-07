@@ -34,6 +34,7 @@ services:
     volumes:
       - ./services/scraper/logs:/app/logs
       - ./services/scraper/src:/app/src
+      - ./services/scraper/config:/app/config
       - ~/.config/gcloud:/root/.config/gcloud
       - ./services/scraper/telegram_scraper_local.session:/app/telegram_scraper_local.session
     depends_on:
@@ -52,6 +53,7 @@ services:
     volumes:
       - ./services/aggregator/logs:/app/logs
       - ./services/aggregator/src:/app/src
+      - ./services/aggregator/config:/app/config
       - ~/.config/gcloud:/root/.config/gcloud
     depends_on:
       postgres:
