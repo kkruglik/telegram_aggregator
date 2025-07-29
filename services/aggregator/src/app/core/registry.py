@@ -22,30 +22,41 @@ class UserRegistry:
 
     @classmethod
     async def _load_users_from_db(cls) -> None:
-        existing_users = await DatabaseRepository.get_all_users()
-        for user in existing_users:
-            user_id, user_tz, notification_time, is_premium = (
-                user["id"],
-                user["timezone"],
-                user["notification_time"],
-                user["is_premium"],
-            )
-            user_cls = User(user_id, notification_time, user_tz, is_premium)
-            cls._users[user_id] = user_cls
-            logger.info(f"User {user_id}|{user_tz}|{notification_time} loaded from db.")
-            cls.schedule_user_updates(user_id)
+        existing_users_response = await DatabaseRepository.get_all_users()
+        if existing_users_response.is_success:
+            existing_users = existing_users_response.data
+            for user in existing_users:
+                user_id, user_tz, notification_time, is_premium = (
+                    user["id"],
+                    user["timezone"],
+                    user["notification_time"],
+                    user["is_premium"],
+                )
+                user_cls = User(user_id, notification_time, user_tz, is_premium)
+                cls._users[user_id] = user_cls
+                logger.info(f"User {user_id}|{user_tz}|{notification_time} loaded from db.")
+                cls.schedule_user_updates(user_id)
+        else:
+            msg = f"Failed to load users from db. Error: {existing_users_response.message}"
+            logger.error(msg)
+            raise Exception(msg)
 
-        users_feeds = await DatabaseRepository.get_user_feed_associations()
-
-        for row in users_feeds:
-            user_id, feed_id = row["user_id"], row["feed_id"]
-            user = cls._users.get(user_id, None)
-            feed = FeedsRegistry.feeds.get(feed_id, None)
-            if user and feed:
-                user.user_feeds[feed_id] = feed
-                logger.info(f"Added feed {feed.channel_name} to user {user.id}.")
-            else:
-                logger.warning(f"User {user_id}|{feed_id} not found.")
+        users_feeds_response = await DatabaseRepository.get_user_feed_associations()
+        if users_feeds_response.is_success:
+            users_feeds = users_feeds_response.data
+            for row in users_feeds:
+                user_id, feed_id = row["user_id"], row["feed_id"]
+                user = cls._users.get(user_id, None)
+                feed = FeedsRegistry.feeds.get(feed_id, None)
+                if user and feed:
+                    user.user_feeds[feed_id] = feed
+                    logger.info(f"Added feed {feed.channel_name} to user {user.id}.")
+                else:
+                    logger.warning(f"User {user_id}|{feed_id} not found.")
+        else:
+            msg = f"Failed to load users from db. Error: {users_feeds_response.message}"
+            logger.error(msg)
+            raise Exception(msg)
 
     @classmethod
     async def get_or_create_user(cls, user_id: int) -> User:
@@ -53,18 +64,14 @@ class UserRegistry:
             logger.info(f"User {user_id} already registered.")
             return cls._users[user_id]
 
-        user_record = await DatabaseRepository.get_user(user_id)
+        user_response = await DatabaseRepository.get_user(user_id)
 
-        if user_record:
-            user = User(user_id)
-            cls._users[user_id] = user
-            logger.info(f"User {user_id} registered successfully")
-            return user
-        else:
-            logger.info(f"Creating new user {user_id}.")
+        if user_response.is_success and not user_response.data:
+            logger.info(f"Creating new user in database: {user_id}.")
             await DatabaseRepository.create_user(user_id, None, False)
-            user = User(user_id)
+            logger.info(f"User {user_id} created successfully in database.")
 
+        user = User(user_id)
         cls._users[user_id] = user
         logger.info(f"User {user_id} loaded/created successfully")
         return user
@@ -142,12 +149,19 @@ class FeedsRegistry:
     @classmethod
     async def _load_feeds_from_db(cls) -> None:
         logger.info("Loading feeds from db.")
-        existing_feeds = await DatabaseRepository.get_all_feeds()
-        for feed in existing_feeds:
-            channel_id, channel_name = feed["id"], feed["channel_name"]
-            cls.feeds[channel_id] = TelegramFeed(channel_id, channel_name)
-            cls.feeds_users_count[channel_id] = 1
-            logger.info(f"Feed {channel_id}|{channel_name} loaded from db.")
+        existing_feeds_response = await DatabaseRepository.get_all_feeds()
+
+        if existing_feeds_response.is_success:
+            existing_feeds = existing_feeds_response.data
+            for feed in existing_feeds:
+                channel_id, channel_name = feed["id"], feed["channel_name"]
+                cls.feeds[channel_id] = TelegramFeed(channel_id, channel_name)
+                cls.feeds_users_count[channel_id] = 1
+                logger.info(f"Feed {channel_id}|{channel_name} loaded from db.")
+        else:
+            msg = f"Failed to load feeds from db. Error: {existing_feeds_response.message}"
+            logger.error(msg)
+            raise Exception(msg)
 
         logger.info("Finished loading feeds from db.")
 

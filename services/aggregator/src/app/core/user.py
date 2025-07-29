@@ -62,28 +62,15 @@ class User:
             logger.info(f"User {self.id} exceeded max number of feeds, skipping")
             return Response.error(ResponseStatus.LIMIT_REACHED)
 
-        try:
-            self.user_feeds[feed.channel_id] = feed
-            await DatabaseRepository.subscribe_to_feed(self.id, feed.channel_id)
-            return Response.success()
-        except Exception as e:
-            logger.error(f"Failed to subscribe user {self.id} to feed {feed.channel_id}: {e}")
-            return Response.error(ResponseStatus.DATABASE_ERROR)
+        self.user_feeds[feed.channel_id] = feed
+        return await DatabaseRepository.subscribe_to_feed(self.id, feed.channel_id)
 
     @log_async_performance()
     async def unsubscribe(self, channel_id: int):
         if channel_id in self.user_feeds:
             logger.info(f"User {self.id} unsubscribing from feed {channel_id}")
             del self.user_feeds[channel_id]
-            # todo check if user reeally unsubscribed
-            await DatabaseRepository.unsubscribe_from_feed(self.id, channel_id)
-            logger.info(f"User {self.id} now subscribed to {len(self.user_feeds)} feeds")
-            return Response.success()
-        else:
-            logger.warning(
-                f"User {self.id} tried to unsubscribe from non-existent feed {channel_id}"
-            )
-            return Response.error(ResponseStatus.UNKNOWN_ERROR)
+            return await DatabaseRepository.unsubscribe_from_feed(self.id, channel_id)
 
     def get_user_feeds(self):
         logger.debug(f"Retrieved feed list for user {self.id}")

@@ -11,6 +11,7 @@ from unittest.mock import Mock, patch, AsyncMock
 
 from app.core.user import User  # type: ignore
 from app.core.feed import TelegramFeed  # type: ignore
+from app.core.enums import Response, ResponseStatus  # type: ignore
 
 
 @pytest.fixture
@@ -87,9 +88,9 @@ def feed_factory():
 def mock_database():
     """Mock DatabaseRepository class methods (not instance methods)"""
     with patch('app.core.user.DatabaseRepository') as mock_class:
-        mock_class.subscribe_to_feed = AsyncMock(return_value=None)
-        mock_class.unsubscribe_from_feed = AsyncMock(return_value=None)  # Simulate successful deletion
-        mock_class.update_user = AsyncMock(return_value=None)
+        mock_class.subscribe_to_feed = AsyncMock(return_value=Response.success())
+        mock_class.unsubscribe_from_feed = AsyncMock(return_value=Response.success())  # Simulate successful deletion
+        mock_class.update_user = AsyncMock(return_value=Response.success())
 
         class MockWrapper:
             def __init__(self, class_mock):
