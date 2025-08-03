@@ -43,8 +43,11 @@ class User:
     async def set_timezone(self, timezone: str):
         logger.info(f"Setting user timezone: {timezone}")
         self.timezone = timezone
-        await DatabaseRepository.update_user(self.id, timezone=self.timezone)
-        logger.info(f"Setting timezone to {self.timezone}")
+        result = await DatabaseRepository.update_user(self.id, timezone=self.timezone)
+        if result.is_success:
+            logger.info(f"Successfully updated timezone to {self.timezone}")
+        else:
+            logger.error(f"Failed to update timezone to {self.timezone}: {result.message}")
 
     def set_notification_time(self, notification_time: time):
         logger.info(f"Setting notification time to {notification_time}")
@@ -62,28 +65,21 @@ class User:
             logger.info(f"User {self.id} exceeded max number of feeds, skipping")
             return Response.error(ResponseStatus.LIMIT_REACHED)
 
-        try:
-            self.user_feeds[feed.channel_id] = feed
-            await DatabaseRepository.subscribe_to_feed(self.id, feed.channel_id)
-            return Response.success()
-        except Exception as e:
-            logger.error(f"Failed to subscribe user {self.id} to feed {feed.channel_id}: {e}")
-            return Response.error(ResponseStatus.DATABASE_ERROR)
+        self.user_feeds[feed.channel_id] = feed
+        return await DatabaseRepository.subscribe_to_feed(self.id, feed.channel_id)
 
     @log_async_performance()
     async def unsubscribe(self, channel_id: int):
         if channel_id in self.user_feeds:
             logger.info(f"User {self.id} unsubscribing from feed {channel_id}")
             del self.user_feeds[channel_id]
-            # todo check if user reeally unsubscribed
-            await DatabaseRepository.unsubscribe_from_feed(self.id, channel_id)
-            logger.info(f"User {self.id} now subscribed to {len(self.user_feeds)} feeds")
-            return Response.success()
-        else:
-            logger.warning(
-                f"User {self.id} tried to unsubscribe from non-existent feed {channel_id}"
-            )
-            return Response.error(ResponseStatus.UNKNOWN_ERROR)
+            result =  await DatabaseRepository.unsubscribe_from_feed(self.id, channel_id)
+            if result.is_success:
+                logger.info(f"User {self.id} successfully unsubscribed from feed {channel_id}")
+                return result
+            else:
+                logger.error(f"Failed to unsubscribe from feed {channel_id}: {result.message}")
+                return result
 
     def get_user_feeds(self):
         logger.debug(f"Retrieved feed list for user {self.id}")
@@ -153,16 +149,23 @@ class User:
     async def save_user_to_database(self):
         """Save the current user state to a database"""
         logger.info(f"Saving user {self.id} to database")
-        await DatabaseRepository.update_user(
+        result = await DatabaseRepository.update_user(
             user_id=self.id,
             notification_time=self.notification_time,
             timezone=self.timezone,
         )
+        if result.is_success:
+            logger.info(f"User {self.id} saved to database")
+        else:
+            logger.error(f"Failed to save user {self.id} to database: {result.message}")
 
     @log_async_performance()
     async def upgrade_user_to_premium(self):
         """Upgrade user to premium status"""
         logger.info(f"Upgrading user {self.id} to premium")
         self.is_premium = True
-        await DatabaseRepository.update_user(self.id, is_premium=True)
-        logger.info(f"User {self.id} upgraded to premium")
+        result = await DatabaseRepository.update_user(self.id, is_premium=True)
+        if result.is_success:
+            logger.info(f"User successfully {self.id} upgraded to premium")
+        else:
+            logger.error(f"Failed to upgrade user {self.id} to premium: {result.message}")

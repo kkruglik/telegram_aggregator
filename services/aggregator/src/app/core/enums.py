@@ -18,6 +18,9 @@ class ResponseStatus(StrEnum):
     VALIDATION_ERROR = auto()
     CONNECTION_ERROR = auto()
     CONSTRAINT_VIOLATION = auto()
+    UNIQUE_CONSTRAINT_VIOLATION = auto()
+    EMPTY_FETCH = auto()
+    NO_SUBSCRIPTION = auto()
 
     # General errors
     UNKNOWN_ERROR = auto()
@@ -27,6 +30,7 @@ class ResponseStatus(StrEnum):
 class Response:
     status: ResponseStatus
     message: str = ""
+    data: Any | None = None
     details: Optional[Dict[str, Any]] = None
 
     @property
@@ -34,12 +38,16 @@ class Response:
         return self.status == ResponseStatus.OK
 
     @property
+    def is_error(self) -> bool:
+        return self.status != ResponseStatus.OK
+
+    @property
     def is_duplicate(self) -> bool:
         return self.status in (ResponseStatus.ALREADY_EXISTS, ResponseStatus.ALREADY_SUBSCRIBED)
 
     @classmethod
-    def success(cls, message: str = "Operation successful", **kwargs) -> Self:
-        return cls(ResponseStatus.OK, message=message, details=kwargs if kwargs else None)
+    def success(cls, message: str = "Operation successful", data: Any | None = None, **kwargs) -> Self:
+        return cls(ResponseStatus.OK, data=data, message=message, details=kwargs if kwargs else None)
 
     @classmethod
     def error(cls, status: ResponseStatus, message: str = "", **kwargs) -> Self:
@@ -68,3 +76,6 @@ class Response:
     @classmethod
     def database_error(cls, message: str = "Database operation failed", **kwargs) -> Self:
         return cls(ResponseStatus.DATABASE_ERROR, message=message, details=kwargs if kwargs else None)
+
+    def __bool__(self):
+        return self.status == ResponseStatus.OK

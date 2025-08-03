@@ -93,7 +93,10 @@ class TelegramFeed:
         for post_id, post_data in self.content["posts"].items():
             logger.info(f"Adding post {post_id} to database")
             result = await DatabaseRepository.add_post_to_db(
-                post_id, post_data["text"], self.channel_id, post_data["summary"]
+                post_id=post_id,
+                text=post_data["text"],
+                channel_id=self.channel_id,
+                summary=post_data["summary"],
             )
 
             match result.status:
@@ -113,10 +116,14 @@ class TelegramFeed:
     @log_async_performance()
     async def _get_or_generate_summary(self, channel_id: int, post_id: int, input_text: str):
         logger.info(f"Processing summary for post {post_id} from channel {channel_id}")
-        if result := await DatabaseRepository.get_post_summary(channel_id, post_id):
+        result = await DatabaseRepository.get_post_summary(channel_id, post_id)
+        
+        if result.is_success and result.data:
             logger.info(f"Found summary in database for post {post_id} from channel {channel_id}")
-            summary = result['summary']
+            summary = result.data["summary"]
             return post_id, summary
+        elif result.is_error:
+            logger.error(f"Error retrieving summary from database for post {post_id} from channel {channel_id}: {result.message}")
 
         logger.info(f"No summary found in database for post {post_id} from channel {channel_id}. Generating a new one")
         new_summary = await generate_summary(client=self._client, input_text=input_text)

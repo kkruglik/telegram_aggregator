@@ -32,6 +32,87 @@ class DatabaseRepository:
             yield connection
 
     @classmethod
+    async def _execute_fetchrow(cls, query: str, *args) -> Response:
+        try:
+            async with cls.get_connection() as conn:
+                result = await conn.fetchrow(query, *args)
+                return Response.success(data=result)
+
+        except asyncpg.UniqueViolationError as e:
+            msg = f"Unique constraint violation: {e}"
+            logger.error(msg)
+            return Response.error(status=ResponseStatus.UNIQUE_CONSTRAINT_VIOLATION, message=msg)
+
+        except asyncpg.ForeignKeyViolationError as e:
+            msg = f"Foreign key constraint violation: {e}"
+            logger.error(msg)
+            return Response.error(status=ResponseStatus.CONSTRAINT_VIOLATION, message=msg)
+
+        except asyncpg.PostgresError as e:
+            msg = f"Postgres error: {e}"
+            logger.error(msg)
+            return Response.error(status=ResponseStatus.DATABASE_ERROR, message=msg)
+
+        except Exception as e:
+            msg = f"Unknown database error: {e}"
+            logger.error(msg)
+            return Response.error(status=ResponseStatus.UNKNOWN_ERROR, message=msg)
+
+    @classmethod
+    async def _execute_execute(cls, query: str, *args) -> Response:
+        try:
+            async with cls.get_connection() as conn:
+                result = await conn.execute(query, *args)
+                return Response.success(data=result)
+
+        except asyncpg.UniqueViolationError as e:
+            msg = f"Unique constraint violation: {e}"
+            logger.error(msg)
+            return Response.error(status=ResponseStatus.UNIQUE_CONSTRAINT_VIOLATION, message=msg)
+
+        except asyncpg.ForeignKeyViolationError as e:
+            msg = f"Foreign key constraint violation: {e}"
+            logger.error(msg)
+            return Response.error(status=ResponseStatus.CONSTRAINT_VIOLATION, message=msg)
+
+        except asyncpg.PostgresError as e:
+            msg = f"Postgres error: {e}"
+            logger.error(msg)
+            return Response.error(status=ResponseStatus.DATABASE_ERROR, message=msg)
+
+        except Exception as e:
+            msg = f"Unknown database error: {e}"
+            logger.error(msg)
+            return Response.error(status=ResponseStatus.UNKNOWN_ERROR, message=msg)
+
+    @classmethod
+    async def _execute_fetch(cls, query: str, *args) -> Response:
+        try:
+            async with cls.get_connection() as conn:
+                result = await conn.fetch(query, *args)
+                return Response.success(data=result)
+
+        except asyncpg.UniqueViolationError as e:
+            msg = f"Unique constraint violation: {e}"
+            logger.error(msg)
+            return Response.error(status=ResponseStatus.UNIQUE_CONSTRAINT_VIOLATION, message=msg)
+
+        except asyncpg.ForeignKeyViolationError as e:
+            msg = f"Foreign key constraint violation: {e}"
+            logger.error(msg)
+            return Response.error(status=ResponseStatus.CONSTRAINT_VIOLATION, message=msg)
+
+        except asyncpg.PostgresError as e:
+            msg = f"Postgres error: {e}"
+            logger.error(msg)
+            return Response.error(status=ResponseStatus.DATABASE_ERROR, message=msg)
+
+        except Exception as e:
+            msg = f"Unknown database error: {e}"
+            logger.error(msg)
+            return Response.error(status=ResponseStatus.UNKNOWN_ERROR, message=msg)
+
+    @classmethod
     def create_migration(cls, name):
         """Create a new migration file"""
         return cls._migration_manager.create_migration(name)
@@ -121,55 +202,49 @@ class DatabaseRepository:
     @classmethod
     async def create_user(
             cls, user_id: int, notification_time: time | None = None, is_premium: bool = False
-    ):
+    ) -> Response:
         """Create a new user"""
-        async with cls.get_connection() as conn:
-            return await conn.fetchrow(
-                """
+        query = """
                 INSERT INTO users(id, notification_time, is_premium)
                 VALUES ($1, $2, $3)
                 RETURNING *
-                """,
-                user_id,
-                notification_time,
-                is_premium,
-            )
+                """
+        result = await cls._execute_fetchrow(query, user_id, notification_time, is_premium)
+        return result
 
     @classmethod
-    async def get_user(cls, user_id):
+    async def get_user(cls, user_id) -> Response:
         """Get user by telegram ID"""
-        async with cls.get_connection() as conn:
-            return await conn.fetchrow("SELECT * FROM users WHERE id = $1", user_id)
+        query = "SELECT * FROM users WHERE id = $1"
+        result = await cls._execute_fetchrow(query, user_id)
+        return result
 
     @classmethod
-    async def get_all_users(cls):
+    async def get_all_users(cls) -> Response:
         """Get all users"""
-        async with cls.get_connection() as conn:
-            return await conn.fetch(
-                """SELECT *
-                   FROM users"""
-            )
+        return await cls._execute_fetch(
+            """SELECT *
+               FROM users"""
+        )
 
     @classmethod
-    async def get_all_feeds(cls):
+    async def get_all_feeds(cls) -> Response:
         """Get all feeds"""
-        async with cls.get_connection() as conn:
-            return await conn.fetch(
-                """SELECT *
-                   FROM feeds"""
-            )
+        return await cls._execute_fetch(
+            """SELECT *
+               FROM feeds"""
+        )
 
     @classmethod
-    async def get_user_feed_associations(cls):
+    async def get_user_feed_associations(cls) -> Response:
         """Get all users feeds"""
-        async with cls.get_connection() as conn:
-            return await conn.fetch(
-                """SELECT *
-                   FROM users_feeds"""
-            )
+        return await cls._execute_fetch(
+            """SELECT *
+               FROM users_feeds"""
+        )
 
     @classmethod
-    async def update_user(cls, user_id, notification_time=None, timezone=None, is_premium=None):
+    async def update_user(cls, user_id, notification_time=None, timezone=None, is_premium=None) -> Response:
         """
         Update user with specified fields
         """
@@ -193,8 +268,10 @@ class DatabaseRepository:
             param_index += 1
 
         if not set_parts:
-            async with cls.get_connection() as conn:
-                return await conn.fetchrow("SELECT * FROM users WHERE id = $1", user_id)
+            return await cls._execute_fetchrow(
+                "SELECT * FROM users WHERE id = $1",
+                user_id
+            )
 
         query = f"""
             UPDATE users
@@ -202,210 +279,128 @@ class DatabaseRepository:
             WHERE id = $1
             RETURNING *
         """
-
-        async with cls.get_connection() as conn:
-            return await conn.fetchrow(query, *params)
+        result = await cls._execute_fetchrow(query, *params)
+        return result
 
     @classmethod
-    async def create_feed(cls, channel_id: int, channel_name: str):
+    async def create_feed(cls, channel_id: int, channel_name: str) -> Response:
         """Create a new feed"""
-        async with cls.get_connection() as conn:
-            return await conn.fetchrow(
-                """
+        query = """
                 INSERT INTO feeds(id, channel_name)
                 VALUES ($1, $2)
                 ON CONFLICT (id) DO NOTHING;
-                """,
-                channel_id,
-                channel_name,
-            )
+                """
+        result = await cls._execute_fetchrow(query, channel_id, channel_name)
+        return result
 
     @classmethod
-    async def get_feed(cls, channel_id: int):
+    async def get_feed(cls, channel_id: int) -> Response:
         """Get feed by channel name"""
-        async with cls.get_connection() as conn:
-            return await conn.fetchrow("SELECT * FROM feeds WHERE id = $1", channel_id)
+        query = "SELECT * FROM feeds WHERE id = $1"
+        result = await cls._execute_fetchrow(query, channel_id)
+        return result
 
     @classmethod
-    async def subscribe_to_feed(cls, user_id: int, channel_id: int):
+    async def subscribe_to_feed(cls, user_id: int, channel_id: int) -> Response:
         """Subscribe to a new feed"""
-        async with cls.get_connection() as conn:
-            try:
-                user = await cls.get_user(user_id)
-                feed = await cls.get_feed(channel_id)
-                if user is None or feed is None:
-                    raise ValueError("User ID or feed ID not found")
+        user_response = await cls.get_user(user_id)
 
-                existing = await conn.fetchrow(
-                    """
-                    SELECT *
-                    FROM users_feeds
-                    WHERE user_id = $1
-                      AND feed_id = $2
-                    """,
-                    user_id,
-                    channel_id,
-                )
+        if user_response.is_error or user_response.data is None:
+            return user_response
 
-                if existing:
-                    logger.info(f"User {user_id} already subscribed to feed {channel_id}")
-                    return existing
+        feed_response = await cls.get_feed(channel_id)
 
-                return await conn.fetchrow(
-                    """
-                    INSERT INTO users_feeds(user_id, feed_id)
-                    VALUES ($1, $2)
-                    RETURNING *
-                    """,
-                    user_id,
-                    channel_id,
-                )
+        if feed_response.is_error or feed_response.data is None:
+            return feed_response
 
-            except asyncpg.UniqueViolationError:
-                logger.info(f"Race condition: User {user_id} was subscribed to feed {channel_id}")
-                return await conn.fetchrow(
-                    """
-                    SELECT *
-                    FROM users_feeds
-                    WHERE user_id = $1
-                      AND feed_id = $2
-                    """,
-                    user_id,
-                    channel_id,
-                )
+        existing = await cls._execute_fetchrow(
+            """
+            SELECT *
+            FROM users_feeds
+            WHERE user_id = $1
+              AND feed_id = $2
+            """,
+            user_id,
+            channel_id,
+        )
 
-            except Exception as e:
-                logger.error(f"Error subscribing user {user_id} to feed {channel_id}: {e}")
-                raise
+        if existing.success() and existing.data:
+            msg = f"User {user_id} already subscribed to feed {channel_id}"
+            logger.info(msg)
+            return Response.error(status=ResponseStatus.ALREADY_SUBSCRIBED, message=msg)
+
+        result = await cls._execute_fetchrow(
+            """
+            INSERT INTO users_feeds(user_id, feed_id)
+            VALUES ($1, $2)
+            RETURNING *
+            """,
+            user_id,
+            channel_id,
+        )
+        return result
 
     @classmethod
-    async def unsubscribe_from_feed(cls, user_id: int, channel_id: int):
+    async def unsubscribe_from_feed(cls, user_id: int, channel_id: int) -> Response:
         """Unsubscribe from a feed"""
-        try:
-            async with cls.get_connection() as conn:
-                existing_subscription = await conn.fetchrow(
-                    """
-                    SELECT user_id
-                    FROM users_feeds
-                    WHERE user_id = $1
-                      AND feed_id = $2;
-                    """,
-                    user_id,
-                    channel_id,
-                )
+        existing_subscription = await cls._execute_fetchrow(
+            """
+            SELECT user_id
+            FROM users_feeds
+            WHERE user_id = $1 AND feed_id = $2;
+            """,
+            user_id,
+            channel_id,
+        )
+        if existing_subscription.success() and not existing_subscription.data:
+            msg = f"No subscription found for user {user_id} and feed {channel_id}"
+            logger.info(msg)
+            return Response.error(status=ResponseStatus.NO_SUBSCRIPTION, message=msg)
 
-                if not existing_subscription:
-                    logger.info(f"No subscription found for user {user_id} and feed {channel_id}")
-                    return None
-
-                return await conn.execute(
-                    """
+        if existing_subscription.success() and existing_subscription.data:
+            query = """
                     DELETE
                     FROM users_feeds
                     WHERE user_id = $1
                       AND feed_id = $2;
-                    """,
-                    user_id,
-                    channel_id,
-                )
+                    """
+            result = await cls._execute_execute(query, user_id, channel_id)
+            return result
 
-        except Exception as e:
-            logger.error(f"Error unsubscribing user {user_id} from feed {channel_id}: {e}")
-            raise
+        return Response.error(status=ResponseStatus.UNKNOWN_ERROR, message="Unknown error")
 
     @classmethod
     async def add_post_to_db(cls, post_id: int, text: str, channel_id: int, summary: str | None = None) -> Response:
         """Add a new post to the content table"""
-        try:
-            async with cls.get_connection() as conn:
-                result = await conn.fetchrow(
-                    """
-                    INSERT INTO content(post_id, text, summary, channel_id)
-                    VALUES ($1, $2, $3, $4)
-                    ON CONFLICT (post_id, channel_id) DO NOTHING
-                    RETURNING post_id, channel_id
-                    """,
-                    post_id,
-                    text,
-                    summary,
-                    channel_id,
-                )
-
-                if result:
-                    logger.info(f"Successfully added post {post_id}/{channel_id}")
-
-                    return Response.success(
-                        post_id=result['post_id'],
-                        channel_id=result['channel_id']
-                    )
-                else:
-                    logger.info(f"Post {post_id}/{channel_id} already exists in database, skipping")
-
-                    return Response.error(
-                        status=ResponseStatus.ALREADY_EXISTS,
-                        post_id=post_id,
-                        channel_id=channel_id
-                    )
-
-        except asyncpg.UniqueViolationError as e:
-            logger.error(f"Unique constraint violation for post {post_id}/{channel_id}: {e}")
-            return Response.error(
-                status=ResponseStatus.CONSTRAINT_VIOLATION,
-                post_id=post_id,
-                channel_id=channel_id,
-                error_details=str(e)
-            )
-
-        except Exception as e:
-            logger.error(f"Error adding post {post_id}/{channel_id}: {e}")
-            return Response.error(
-                status=ResponseStatus.DATABASE_ERROR,
-                post_id=post_id,
-                channel_id=channel_id,
-                error_details=str(e)
-            )
+        query = """
+                INSERT INTO content(post_id, text, summary, channel_id)
+                VALUES ($1, $2, $3, $4)
+                ON CONFLICT (post_id, channel_id) DO NOTHING
+                RETURNING post_id, channel_id
+                """
+        result = await cls._execute_fetchrow(query, post_id, text, summary, channel_id)
+        return result
 
     @classmethod
-    async def update_post_summary(cls, post_id: int, summary: str):
+    async def update_post_summary(cls, post_id: int, summary: str) -> Response:
         """Update summary for existing post in the content table"""
-        try:
-            async with cls.get_connection() as conn:
-                result = await conn.fetchrow(
-                    """
-                    UPDATE content
-                    SET summary = $2
-                    WHERE post_id = $1
-                    RETURNING *
-                    """,
-                    post_id,
-                    summary,
-                )
-                if result:
-                    logger.info(f"Successfully updated summary for post {post_id}")
-                else:
-                    logger.warning(f"No post found with ID {post_id}")
-                return result
-        except Exception as e:
-            logger.error(f"Error updating summary for post {post_id}: {e}")
-            raise
+        query = """
+                UPDATE content
+                SET summary = $2
+                WHERE post_id = $1
+                RETURNING *
+                """
+        result = await cls._execute_fetchrow(query, post_id, summary)
+        return result
 
     @classmethod
-    async def get_post_summary(cls, channel_id: int, post_id: int):
-        try:
-            async with cls.get_connection() as conn:
-                result = await conn.fetchrow(
-                    """
-                    SELECT channel_id, post_id, summary
-                    FROM content
-                    WHERE post_id = $1
-                      AND channel_id = $2
-                      AND summary IS NOT NULL
-                    """,
-                    post_id, channel_id,
-                )
-                logger.info(f"Found existing summary for post {post_id}/{channel_id}" if result else
-                            f"No existing summary for post {post_id}/{channel_id}")
-                return result
-        except Exception as e:
-            logger.error(f"Error getting summary for post {post_id}/{channel_id}: {e}")
-            raise
+    async def get_post_summary(cls, channel_id: int, post_id: int) -> Response:
+        query = """
+                SELECT channel_id, post_id, summary
+                FROM content
+                WHERE post_id = $1
+                  AND channel_id = $2
+                  AND summary IS NOT NULL
+                """
+        result = await cls._execute_fetchrow(query, post_id, channel_id)
+        return result

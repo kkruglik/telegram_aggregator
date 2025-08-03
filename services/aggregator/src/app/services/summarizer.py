@@ -3,7 +3,7 @@ from asyncio import Semaphore
 
 from google.genai import types  # type: ignore
 
-from .prompt import *
+from .prompt import prompt_v1_2
 
 logger = logging.getLogger("news_aggregator")
 
