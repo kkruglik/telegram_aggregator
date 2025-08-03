@@ -24,7 +24,7 @@ class UserRegistry:
     async def _load_users_from_db(cls) -> None:
         existing_users_response = await DatabaseRepository.get_all_users()
         if existing_users_response.is_success:
-            existing_users = existing_users_response.data
+            existing_users: list[dict] = existing_users_response.data
             for user in existing_users:
                 user_id, user_tz, notification_time, is_premium = (
                     user["id"],
@@ -66,10 +66,15 @@ class UserRegistry:
 
         user_response = await DatabaseRepository.get_user(user_id)
 
-        if user_response.is_success and not user_response.data:
+        if user_response.is_error:
+            logger.error(f"Error getting user {user_id} from database: {user_response.message}")
+        elif user_response.is_success and not user_response.data:
             logger.info(f"Creating new user in database: {user_id}.")
-            await DatabaseRepository.create_user(user_id, None, False)
-            logger.info(f"User {user_id} created successfully in database.")
+            result = await DatabaseRepository.create_user(user_id, None, False)
+            if result.is_success:
+                logger.info(f"User {user_id} created successfully in database.")
+            else:
+                logger.error(f"Failed to create user {user_id} in database: {result.message}")
 
         user = User(user_id)
         cls._users[user_id] = user
@@ -240,10 +245,13 @@ class FeedsRegistry:
                 f"Feed {normalized_feed_name} already exists, subscriber count increased to {cls.feeds_users_count[channel_id]}"
             )
         else:
-            await DatabaseRepository.create_feed(channel_id, channel_name)
-            cls.feeds[channel_id] = TelegramFeed(channel_id, channel_name)
-            cls.feeds_users_count[channel_id] = 1
-            logger.info(f"New feed {channel_id} created with 1 subscriber")
+            result = await DatabaseRepository.create_feed(channel_id, channel_name)
+            if result.is_success:
+                cls.feeds[channel_id] = TelegramFeed(channel_id, channel_name)
+                cls.feeds_users_count[channel_id] = 1
+                logger.info(f"New feed {channel_id} created with 1 subscriber")
+            else:
+                logger.error(f"Failed to create feed: {result.message=}, {channel_id=}, {channel_name=}")
 
         return cls.feeds[channel_id]
 

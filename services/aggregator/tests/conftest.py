@@ -11,7 +11,7 @@ from unittest.mock import Mock, patch, AsyncMock
 
 from app.core.user import User  # type: ignore
 from app.core.feed import TelegramFeed  # type: ignore
-from app.core.enums import Response, ResponseStatus  # type: ignore
+from app.core.enums import Response # type: ignore
 
 
 @pytest.fixture

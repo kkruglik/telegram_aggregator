@@ -213,14 +213,14 @@ class DatabaseRepository:
         return result
 
     @classmethod
-    async def get_user(cls, user_id):
+    async def get_user(cls, user_id) -> Response:
         """Get user by telegram ID"""
         query = "SELECT * FROM users WHERE id = $1"
         result = await cls._execute_fetchrow(query, user_id)
         return result
 
     @classmethod
-    async def get_all_users(cls):
+    async def get_all_users(cls) -> Response:
         """Get all users"""
         return await cls._execute_fetch(
             """SELECT *
@@ -228,7 +228,7 @@ class DatabaseRepository:
         )
 
     @classmethod
-    async def get_all_feeds(cls):
+    async def get_all_feeds(cls) -> Response:
         """Get all feeds"""
         return await cls._execute_fetch(
             """SELECT *
@@ -236,7 +236,7 @@ class DatabaseRepository:
         )
 
     @classmethod
-    async def get_user_feed_associations(cls):
+    async def get_user_feed_associations(cls) -> Response:
         """Get all users feeds"""
         return await cls._execute_fetch(
             """SELECT *
@@ -244,7 +244,7 @@ class DatabaseRepository:
         )
 
     @classmethod
-    async def update_user(cls, user_id, notification_time=None, timezone=None, is_premium=None):
+    async def update_user(cls, user_id, notification_time=None, timezone=None, is_premium=None) -> Response:
         """
         Update user with specified fields
         """
@@ -283,7 +283,7 @@ class DatabaseRepository:
         return result
 
     @classmethod
-    async def create_feed(cls, channel_id: int, channel_name: str):
+    async def create_feed(cls, channel_id: int, channel_name: str) -> Response:
         """Create a new feed"""
         query = """
                 INSERT INTO feeds(id, channel_name)
@@ -294,14 +294,14 @@ class DatabaseRepository:
         return result
 
     @classmethod
-    async def get_feed(cls, channel_id: int):
+    async def get_feed(cls, channel_id: int) -> Response:
         """Get feed by channel name"""
         query = "SELECT * FROM feeds WHERE id = $1"
         result = await cls._execute_fetchrow(query, channel_id)
         return result
 
     @classmethod
-    async def subscribe_to_feed(cls, user_id: int, channel_id: int):
+    async def subscribe_to_feed(cls, user_id: int, channel_id: int) -> Response:
         """Subscribe to a new feed"""
         user_response = await cls.get_user(user_id)
 
@@ -341,14 +341,13 @@ class DatabaseRepository:
         return result
 
     @classmethod
-    async def unsubscribe_from_feed(cls, user_id: int, channel_id: int):
+    async def unsubscribe_from_feed(cls, user_id: int, channel_id: int) -> Response:
         """Unsubscribe from a feed"""
         existing_subscription = await cls._execute_fetchrow(
             """
             SELECT user_id
             FROM users_feeds
-            WHERE user_id = $1
-              AND feed_id = $2;
+            WHERE user_id = $1 AND feed_id = $2;
             """,
             user_id,
             channel_id,
@@ -356,7 +355,7 @@ class DatabaseRepository:
         if existing_subscription.success() and not existing_subscription.data:
             msg = f"No subscription found for user {user_id} and feed {channel_id}"
             logger.info(msg)
-            return Response.error(status=ResponseStatus.NO_SUBSCRIBTION, message=msg)
+            return Response.error(status=ResponseStatus.NO_SUBSCRIPTION, message=msg)
 
         if existing_subscription.success() and existing_subscription.data:
             query = """
@@ -367,6 +366,8 @@ class DatabaseRepository:
                     """
             result = await cls._execute_execute(query, user_id, channel_id)
             return result
+
+        return Response.error(status=ResponseStatus.UNKNOWN_ERROR, message="Unknown error")
 
     @classmethod
     async def add_post_to_db(cls, post_id: int, text: str, channel_id: int, summary: str | None = None) -> Response:

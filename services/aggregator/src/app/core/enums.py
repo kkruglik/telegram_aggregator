@@ -20,7 +20,7 @@ class ResponseStatus(StrEnum):
     CONSTRAINT_VIOLATION = auto()
     UNIQUE_CONSTRAINT_VIOLATION = auto()
     EMPTY_FETCH = auto()
-    NO_SUBSCRIBTION = auto()
+    NO_SUBSCRIPTION = auto()
 
     # General errors
     UNKNOWN_ERROR = auto()
