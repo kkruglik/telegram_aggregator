@@ -203,14 +203,14 @@ class FeedsRegistry:
 
         feed_name = feed_name.strip()
 
-        if feed_name.startswith(('http://', 'https://')):
+        if feed_name.startswith(("http://", "https://")):
             parsed = urlparse(feed_name)
-            if parsed.netloc not in ['t.me', 'telegram.me']:
+            if parsed.netloc not in ["t.me", "telegram.me"]:
                 raise ValueError(f"Invalid Telegram URL domain: {parsed.netloc}")
-            channel_name = parsed.path.lstrip('/')
-        elif feed_name.startswith('t.me/'):
+            channel_name = parsed.path.lstrip("/")
+        elif feed_name.startswith("t.me/"):
             channel_name = feed_name[5:]
-        elif feed_name.startswith('@'):
+        elif feed_name.startswith("@"):
             channel_name = feed_name[1:]
         else:
             channel_name = feed_name
@@ -233,7 +233,9 @@ class FeedsRegistry:
 
         channel_id, channel_name = await get_channel_id(normalized_feed_name, cls.scraper_url)
 
-        logger.info(f"Creating feed {normalized_feed_name} with id {channel_id} and name {channel_name}")
+        logger.info(
+            f"Creating feed {normalized_feed_name} with id {channel_id} and name {channel_name}"
+        )
 
         if channel_id is None:
             logger.warning(f"Feed {normalized_feed_name} not found.")
@@ -251,7 +253,9 @@ class FeedsRegistry:
                 cls.feeds_users_count[channel_id] = 1
                 logger.info(f"New feed {channel_id} created with 1 subscriber")
             else:
-                logger.error(f"Failed to create feed: {result.message=}, {channel_id=}, {channel_name=}")
+                logger.error(
+                    f"Failed to create feed: {result.message=}, {channel_id=}, {channel_name=}"
+                )
 
         return cls.feeds[channel_id]
 

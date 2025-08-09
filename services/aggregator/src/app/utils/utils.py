@@ -24,7 +24,7 @@ def load_yaml(path: str | Path) -> dict:
 
 
 def setup_logging(
-        default_path="logging_config.yaml", default_level=logging.INFO, env_key="LOG_CONFIG"
+    default_path="logging_config.yaml", default_level=logging.INFO, env_key="LOG_CONFIG"
 ):
     """Setup logging configuration from YAML file
 

@@ -201,7 +201,7 @@ class DatabaseRepository:
 
     @classmethod
     async def create_user(
-            cls, user_id: int, notification_time: time | None = None, is_premium: bool = False
+        cls, user_id: int, notification_time: time | None = None, is_premium: bool = False
     ) -> Response:
         """Create a new user"""
         query = """
@@ -244,7 +244,9 @@ class DatabaseRepository:
         )
 
     @classmethod
-    async def update_user(cls, user_id, notification_time=None, timezone=None, is_premium=None) -> Response:
+    async def update_user(
+        cls, user_id, notification_time=None, timezone=None, is_premium=None
+    ) -> Response:
         """
         Update user with specified fields
         """
@@ -268,10 +270,7 @@ class DatabaseRepository:
             param_index += 1
 
         if not set_parts:
-            return await cls._execute_fetchrow(
-                "SELECT * FROM users WHERE id = $1",
-                user_id
-            )
+            return await cls._execute_fetchrow("SELECT * FROM users WHERE id = $1", user_id)
 
         query = f"""
             UPDATE users
@@ -370,7 +369,9 @@ class DatabaseRepository:
         return Response.error(status=ResponseStatus.UNKNOWN_ERROR, message="Unknown error")
 
     @classmethod
-    async def add_post_to_db(cls, post_id: int, text: str, channel_id: int, summary: str | None = None) -> Response:
+    async def add_post_to_db(
+        cls, post_id: int, text: str, channel_id: int, summary: str | None = None
+    ) -> Response:
         """Add a new post to the content table"""
         query = """
                 INSERT INTO content(post_id, text, summary, channel_id)

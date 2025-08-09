@@ -11,7 +11,7 @@ from unittest.mock import Mock, patch, AsyncMock
 
 from app.core.user import User  # type: ignore
 from app.core.feed import TelegramFeed  # type: ignore
-from app.core.enums import Response # type: ignore
+from app.core.enums import Response  # type: ignore
 
 
 @pytest.fixture
@@ -34,11 +34,22 @@ def premium_user() -> User:
     )
 
 
-@pytest.fixture(params=[
-    {"user_id": 12345, "is_premium": False, },
-    {"user_id": 67890, "is_premium": True, },
-    {"user_id": 11111, "is_premium": False, },
-])
+@pytest.fixture(
+    params=[
+        {
+            "user_id": 12345,
+            "is_premium": False,
+        },
+        {
+            "user_id": 67890,
+            "is_premium": True,
+        },
+        {
+            "user_id": 11111,
+            "is_premium": False,
+        },
+    ]
+)
 def parameterized_user(request):
     """Creates different types of users for comprehensive testing"""
     user_data = request.param
@@ -46,7 +57,7 @@ def parameterized_user(request):
         user_id=user_data["user_id"],
         notification_time=time(12, 0),
         timezone="UTC",
-        is_premium=user_data["is_premium"]
+        is_premium=user_data["is_premium"],
     )
     return user
 
@@ -72,13 +83,17 @@ def feed_factory():
         mock_feed = Mock(spec=TelegramFeed)
         mock_feed.channel_id = channel_id
         mock_feed.channel_name = channel_name or "test-channel"
-        mock_feed.content = {"posts": {1: {
-            'updated_at': datetime.datetime(2025, 6, 23, 12, 12, 12),
-            'text': 'test-text',
-            'channel_id': channel_id,
-            'url': 'test-url',
-            'id': 1,
-        }}}
+        mock_feed.content = {
+            "posts": {
+                1: {
+                    "updated_at": datetime.datetime(2025, 6, 23, 12, 12, 12),
+                    "text": "test-text",
+                    "channel_id": channel_id,
+                    "url": "test-url",
+                    "id": 1,
+                }
+            }
+        }
         return mock_feed
 
     return create_feed
@@ -87,9 +102,11 @@ def feed_factory():
 @pytest.fixture
 def mock_database():
     """Mock DatabaseRepository class methods (not instance methods)"""
-    with patch('app.core.user.DatabaseRepository') as mock_class:
+    with patch("app.core.user.DatabaseRepository") as mock_class:
         mock_class.subscribe_to_feed = AsyncMock(return_value=Response.success())
-        mock_class.unsubscribe_from_feed = AsyncMock(return_value=Response.success())  # Simulate successful deletion
+        mock_class.unsubscribe_from_feed = AsyncMock(
+            return_value=Response.success()
+        )  # Simulate successful deletion
         mock_class.update_user = AsyncMock(return_value=Response.success())
 
         class MockWrapper:

@@ -15,7 +15,7 @@ from app.core.user import User  # type: ignore
 @pytest.mark.asyncio
 async def test_subscription_properties(user_id, channel_ids):
     """Property: Users with fewer than 5 subscriptions can always add one more unique subscription"""
-    with patch('app.db.repository.DatabaseRepository.subscribe_to_feed') as mock_db:
+    with patch("app.db.repository.DatabaseRepository.subscribe_to_feed") as mock_db:
         mock_db.return_value = None  # Fresh mock for each example
 
         user = User(user_id=user_id, timezone="UTC", is_premium=False)

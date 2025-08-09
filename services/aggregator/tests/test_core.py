@@ -22,7 +22,9 @@ async def test_standard_user_subscribe_success(standard_user, mock_database, fee
 
 
 @pytest.mark.asyncio
-async def test_standard_user_subscribe_five_channels_success(standard_user, mock_database, feed_factory):
+async def test_standard_user_subscribe_five_channels_success(
+    standard_user, mock_database, feed_factory
+):
     user_id = standard_user.id
     expected_calls = []
 
@@ -94,13 +96,18 @@ async def test_standard_user_unsubscribe_success(standard_user, mock_database, f
     mock_database.unsubscribe_from_feed.assert_called_once_with(standard_user.id, channel_id)
 
 
-@pytest.mark.parametrize("channel_id,expected_status", [
-    (123, ResponseStatus.OK),
-    (456, ResponseStatus.OK),
-    (999999, ResponseStatus.OK),
-])
+@pytest.mark.parametrize(
+    "channel_id,expected_status",
+    [
+        (123, ResponseStatus.OK),
+        (456, ResponseStatus.OK),
+        (999999, ResponseStatus.OK),
+    ],
+)
 @pytest.mark.asyncio
-async def test_subscribe_different_channels(standard_user, mock_database, feed_factory, channel_id, expected_status):
+async def test_subscribe_different_channels(
+    standard_user, mock_database, feed_factory, channel_id, expected_status
+):
     """Test subscription to different channel IDs"""
     feed = feed_factory(channel_id=channel_id)
 
@@ -158,4 +165,3 @@ async def test_upgrade_user_to_premium(standard_user, mock_database, feed_factor
     assert result.status == ResponseStatus.OK
     assert mock_database.subscribe_to_feed.call_count == 6
     assert len(standard_user.user_feeds) == 6
-

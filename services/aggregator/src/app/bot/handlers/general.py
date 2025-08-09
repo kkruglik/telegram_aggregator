@@ -8,7 +8,7 @@ from ...core.registry import UserRegistry
 
 logger = logging.getLogger("news_aggregator")
 
-router = Router(name='general')
+router = Router(name="general")
 
 
 @router.message(Command("list"))
@@ -56,5 +56,5 @@ async def echo(message: Message):
         "⏰ /notification_time - Set your daily news time\n"
         "🌍 /timezone - Change your timezone\n\n"
         "💡 <i>Tip: Just send a command to get started!</i>",
-        parse_mode="HTML"
+        parse_mode="HTML",
     )

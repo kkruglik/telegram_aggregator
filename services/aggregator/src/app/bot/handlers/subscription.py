@@ -1,7 +1,7 @@
 import logging
 
 from aiogram import Router, types, F  # type: ignore
-from aiogram.filters import Command # type: ignore
+from aiogram.filters import Command  # type: ignore
 from aiogram.fsm.context import FSMContext  # type: ignore
 from aiogram.types import Message  # type: ignore
 
@@ -12,13 +12,12 @@ from ...core.registry import UserRegistry, FeedsRegistry
 
 logger = logging.getLogger("news_aggregator")
 
-router = Router(name='subscription')
+router = Router(name="subscription")
 
 
 @router.message(Command("subscribe"))
 async def subscribe(message: Message, state: FSMContext):
-    await message.answer(
-        "Send channel name in format @channel_name or https://t.me/channel_name")
+    await message.answer("Send channel name in format @channel_name or https://t.me/channel_name")
     await state.set_state(FeedStates.waiting_for_feed_name)
 
 
@@ -28,7 +27,9 @@ async def process_feed_name(message: Message, state: FSMContext):
     feed_name = message.text.strip()
 
     if not feed_name:
-        await message.answer("Send channel name in format @channel_name or https://t.me/channel_name")
+        await message.answer(
+            "Send channel name in format @channel_name or https://t.me/channel_name"
+        )
         return
 
     user_id = message.from_user.id
@@ -36,15 +37,19 @@ async def process_feed_name(message: Message, state: FSMContext):
     feed = await FeedsRegistry.create_or_get_feed(feed_name)
 
     if feed is None:
-        await message.answer("❌ Channel not found. Please try again. "
-                             "Send channel name in format @channel_name or https://t.me/channel_name")
+        await message.answer(
+            "❌ Channel not found. Please try again. "
+            "Send channel name in format @channel_name or https://t.me/channel_name"
+        )
         return
 
     result = await user.subscribe(feed)
 
     match result.status:
         case ResponseStatus.OK:
-            await message.answer(f"✅ You successfully subscribed for this channel: {feed.channel_name}!")
+            await message.answer(
+                f"✅ You successfully subscribed for this channel: {feed.channel_name}!"
+            )
         case ResponseStatus.LIMIT_REACHED:
             await message.answer(
                 "❌ You've reached the limit of feeds. Upgrade to premium to add more feeds!"
@@ -96,7 +101,7 @@ async def process_unsubscribe_callback(callback_query: types.CallbackQuery):
                     "✅ You successfully unsubscribed from the channel.\n\n"
                     "Use /subscribe to add new feeds or /list to see your remaining subscriptions.",
                     parse_mode="HTML",
-                    reply_markup=None
+                    reply_markup=None,
                 )
                 FeedsRegistry.release_feed(feed_id)
 
@@ -104,13 +109,13 @@ async def process_unsubscribe_callback(callback_query: types.CallbackQuery):
                 await callback_query.message.edit_text(
                     "❌ Sorry, there was a technical issue. Please try again later.",
                     parse_mode="HTML",
-                    reply_markup=None
+                    reply_markup=None,
                 )
             case _:
                 await callback_query.message.edit_text(
                     "❌ Sorry, there was a technical issue. Please try again later.",
                     parse_mode="HTML",
-                    reply_markup=None
+                    reply_markup=None,
                 )
 
         await callback_query.answer()

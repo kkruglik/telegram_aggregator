@@ -13,7 +13,7 @@ from ...core.registry import UserRegistry
 
 logger = logging.getLogger("news_aggregator")
 
-router = Router(name='registration')
+router = Router(name="registration")
 
 
 @router.message(CommandStart())
@@ -34,10 +34,10 @@ async def start(message: Message, state: FSMContext):
         )
 
         await message.answer(
-            greeting +
-            f"📰 Your personalized news feed is active and your notification time is set to {user.notification_time}.\n\n"
+            greeting
+            + f"📰 Your personalized news feed is active and your notification time is set to {user.notification_time}.\n\n"
             f"{commands_list}",
-            parse_mode="HTML"
+            parse_mode="HTML",
         )
         return
 
@@ -50,17 +50,14 @@ async def start(message: Message, state: FSMContext):
         "Let's get you set up in just a few steps!"
     )
 
-    await message.answer(
-        greeting + bot_description,
-        parse_mode="HTML"
-    )
+    await message.answer(greeting + bot_description, parse_mode="HTML")
 
     await sleep(0.3)
 
     await message.answer(
         "📍 <b>Select your timezone: </b>\n\n",
         reply_markup=create_timezone_selection_keyboard(),
-        parse_mode="HTML"
+        parse_mode="HTML",
     )
 
     await state.set_state(RegistrationStates.waiting_for_timezone)
@@ -99,7 +96,7 @@ async def process_timezone(callback: types.CallbackQuery, state: FSMContext):
         await callback.message.edit_text(
             f"📍 <b>Timezone Selected:</b> {selected_timezone} ✅",
             parse_mode="HTML",
-            reply_markup=None
+            reply_markup=None,
         )
 
         await callback.answer()
@@ -116,7 +113,9 @@ async def process_timezone(callback: types.CallbackQuery, state: FSMContext):
         await callback.answer("Error processing timezone. Please try again.")
 
 
-@router.callback_query(RegistrationStates.waiting_for_notification_time, F.data.startswith("__time__"))
+@router.callback_query(
+    RegistrationStates.waiting_for_notification_time, F.data.startswith("__time__")
+)
 async def process_notification_time(callback: types.CallbackQuery, state: FSMContext):
     user_id = callback.from_user.id
     user = await UserRegistry.get_or_create_user(user_id)
@@ -135,7 +134,7 @@ async def process_notification_time(callback: types.CallbackQuery, state: FSMCon
     await callback.message.edit_text(
         f"⏰ <b>Notification Time Selected:</b> {selected_time} ✅",
         parse_mode="HTML",
-        reply_markup=None
+        reply_markup=None,
     )
 
     await callback.answer()
@@ -144,7 +143,7 @@ async def process_notification_time(callback: types.CallbackQuery, state: FSMCon
         f"🎉 <b>Registration Complete!</b>\n\n"
         f"✅ You'll receive your AI-summarized news digest at <b>{selected_time}</b> every day.\n\n"
         f"📰 Ready to get started? Use /subscribe to add your first news feed!",
-        parse_mode="HTML"
+        parse_mode="HTML",
     )
 
     await state.clear()
