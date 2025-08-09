@@ -1,4 +1,4 @@
-# CLAUDE.md
+a CLAUDE.md
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
@@ -15,11 +15,9 @@ The system uses PostgreSQL for data persistence and supports both containerized 
 
 ### Setup and Installation
 ```bash
-# Install dependencies with pip
-make setup
-
-# Install dependencies with uv (preferred)
-make setup-uv
+# Install dependencies with pip (manual setup required)
+# Install dependencies with uv (manual setup required)
+# Note: Use manual pip/uv installation - no make targets available
 ```
 
 ### Running the Application
@@ -27,60 +25,51 @@ make setup-uv
 # Start full development environment with Docker
 make dev
 
-# Start both services locally (no Docker)
-make dev-local
-
-# Run individual services locally
-make run-local-aggregator
-make run-local-scraper
-
 # Production deployment
 make prod
+
+# Individual container management
+make build-dev      # Build dev images
+make build-prod     # Build prod images
+make up-dev         # Start dev containers
+make up-prod        # Start prod containers
+make stop-dev       # Stop dev containers
+make stop-prod      # Stop prod containers
+make restart-dev    # Restart dev containers
+make restart-prod   # Restart prod containers
 ```
 
 ### Testing and Code Quality
 ```bash
 # Run all tests
-make test
-
-# Run tests for specific service
-cd services/aggregator && python -m pytest tests/
-cd services/scraper && pytest
+make test           # Run all tests
+make test-agg       # Run aggregator tests only
+make test-scraper   # Run scraper tests only
 
 # Linting and formatting
-make ruff-check    # Check code with ruff
-make ruff-format   # Format code with ruff
-make ruff          # Both check and format
-
-# Legacy linting (being phased out)
-make lint          # flake8 linting
-make format        # black formatting
+make ruff-check     # Check code with ruff
+make ruff-format    # Format code with ruff
+make ruff           # Both check and format
 ```
 
 ### Database Operations
 ```bash
-# Initialize database in Docker
-make init-db
-
-# Initialize local database
-make init-local-db
+# Database initialization not available via make targets
+# Use manual database setup procedures
 ```
 
 ### Container Management
 ```bash
 # View logs
-make logs
-
-# Stop containers
-make stop
+make logs-dev       # View dev container logs
+make logs-prod      # View prod container logs
 
 # Clean up containers and volumes
-make clean
+make clean-dev      # Remove dev containers and volumes
+make clean-prod     # Remove prod containers and volumes
 
-# Access container shells
-make shell-aggregator
-make shell-scraper
-make shell-db
+# Note: Container shell access not available via make targets
+# Use docker exec commands directly
 ```
 
 ## Core Architecture

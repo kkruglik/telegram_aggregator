@@ -17,11 +17,11 @@ class User:
     __slots__ = ("id", "user_feeds", "notification_time", "timezone", "is_premium")
 
     def __init__(
-            self,
-            user_id: int,
-            notification_time: time | None = None,
-            timezone: str | None = "EET",
-            is_premium: bool = False,
+        self,
+        user_id: int,
+        notification_time: time | None = None,
+        timezone: str | None = "EET",
+        is_premium: bool = False,
     ):
         self.id = user_id
         self.user_feeds: dict[int, TelegramFeed] = {}
@@ -73,7 +73,7 @@ class User:
         if channel_id in self.user_feeds:
             logger.info(f"User {self.id} unsubscribing from feed {channel_id}")
             del self.user_feeds[channel_id]
-            result =  await DatabaseRepository.unsubscribe_from_feed(self.id, channel_id)
+            result = await DatabaseRepository.unsubscribe_from_feed(self.id, channel_id)
             if result.is_success:
                 logger.info(f"User {self.id} successfully unsubscribed from feed {channel_id}")
                 return result
@@ -122,9 +122,7 @@ class User:
 
                 if len(current_message + post_text) > MESSAGE_LIMIT:
                     await self._bot.send_message(
-                        chat_id=self.id,
-                        text=current_message,
-                        parse_mode="HTML"
+                        chat_id=self.id, text=current_message, parse_mode="HTML"
                     )
                     await asyncio.sleep(1)
 
@@ -136,9 +134,7 @@ class User:
 
             if current_message != feed_header:
                 await self._bot.send_message(
-                    chat_id=self.id,
-                    text=current_message,
-                    parse_mode="HTML"
+                    chat_id=self.id, text=current_message, parse_mode="HTML"
                 )
                 await asyncio.sleep(1)
 

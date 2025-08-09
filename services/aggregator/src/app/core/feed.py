@@ -106,7 +106,8 @@ class TelegramFeed:
                     logger.info(f"Post {post_id} already exists in database")
                 case _:
                     logger.info(
-                        f"Post {post_id} not added to database. Error: {result.status}, message: {result.message}")
+                        f"Post {post_id} not added to database. Error: {result.status}, message: {result.message}"
+                    )
 
     def clear_cache(self):
         """Clearly cached posts and reset the last updated timestamp"""
@@ -117,14 +118,18 @@ class TelegramFeed:
     async def _get_or_generate_summary(self, channel_id: int, post_id: int, input_text: str):
         logger.info(f"Processing summary for post {post_id} from channel {channel_id}")
         result = await DatabaseRepository.get_post_summary(channel_id, post_id)
-        
+
         if result.is_success and result.data:
             logger.info(f"Found summary in database for post {post_id} from channel {channel_id}")
             summary = result.data["summary"]
             return post_id, summary
         elif result.is_error:
-            logger.error(f"Error retrieving summary from database for post {post_id} from channel {channel_id}: {result.message}")
+            logger.error(
+                f"Error retrieving summary from database for post {post_id} from channel {channel_id}: {result.message}"
+            )
 
-        logger.info(f"No summary found in database for post {post_id} from channel {channel_id}. Generating a new one")
+        logger.info(
+            f"No summary found in database for post {post_id} from channel {channel_id}. Generating a new one"
+        )
         new_summary = await generate_summary(client=self._client, input_text=input_text)
         return post_id, new_summary.text

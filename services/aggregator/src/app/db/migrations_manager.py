@@ -27,7 +27,10 @@ class MigrationManager:
 
     async def get_applied_migrations(self, conn):
         """Get list of already applied migrations"""
-        return set(m['version'] for m in await conn.fetch("SELECT version FROM schema_migrations ORDER BY id"))
+        return set(
+            m["version"]
+            for m in await conn.fetch("SELECT version FROM schema_migrations ORDER BY id")
+        )
 
     async def apply_migration(self, conn, version, name, sql_content):
         """Apply a single migration within a transaction"""
@@ -36,8 +39,7 @@ class MigrationManager:
                 logger.info(f"Applying migration {version}: {name}")
                 await conn.execute(sql_content)
                 await conn.execute(
-                    "INSERT INTO schema_migrations (version, name) VALUES ($1, $2)",
-                    version, name
+                    "INSERT INTO schema_migrations (version, name) VALUES ($1, $2)", version, name
                 )
 
             logger.info(f"Successfully applied migration {version}: {name}")
@@ -58,8 +60,9 @@ class MigrationManager:
                 logger.info(f"Found {len(applied_migrations)} applied migration(s)")
                 logger.info(f"Applied migration(s): {applied_migrations}")
 
-                migration_files = sorted([f for f in os.listdir(self.migrations_dir)
-                                          if f.endswith('.sql')])
+                migration_files = sorted(
+                    [f for f in os.listdir(self.migrations_dir) if f.endswith(".sql")]
+                )
 
                 logger.info(f"Found {len(migration_files)} migration(s)")
                 logger.info(f"Migration(s): {migration_files}")
@@ -67,8 +70,8 @@ class MigrationManager:
                 applied_count = 0
 
                 for migration_file in migration_files:
-                    version = migration_file.split('_')[0]
-                    name = '_'.join(migration_file.split('_')[1:]).replace('.sql', '')
+                    version = migration_file.split("_")[0]
+                    name = "_".join(migration_file.split("_")[1:]).replace(".sql", "")
 
                     logger.info(f"Processing migration {version}: {name}")
 
@@ -93,7 +96,7 @@ class MigrationManager:
     def create_migration(self, name):
         """Create a new migration file"""
         try:
-            clean_name = name.lower().replace(' ', '_').replace('-', '_')
+            clean_name = name.lower().replace(" ", "_").replace("-", "_")
             timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
             filename = f"{timestamp}_{clean_name}.sql"
             filepath = self.migrations_dir / filename
