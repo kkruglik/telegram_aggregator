@@ -12,14 +12,15 @@ env:
   GAR_LOCATION: europe-north1-docker.pkg.dev/tg-aggregator/aggregator-repo
 
 jobs:
-  build-push-artifact:
+  build-and-push:
     runs-on: ubuntu-latest
     
     steps:
       - name: "Checkout"
-        uses: "actions/checkout@v4"  # Updated to latest version
+        uses: "actions/checkout@v4"
       
-      - id: "auth"  # Fixed: proper indentation
+      - name: "Authenticate to Google Cloud"
+        id: "auth"
         uses: "google-github-actions/auth@v1"
         with:
           credentials_json: "${{ secrets.GCP_SERVICE_ACCOUNT }}"
@@ -27,21 +28,27 @@ jobs:
       - name: "Set up Cloud SDK"
         uses: "google-github-actions/setup-gcloud@v1"
       
-      - name: "Use gcloud CLI"
-        run: "gcloud info"
-      
-      - name: "Docker auth"
-        run: |-
+      - name: "Configure Docker for Artifact Registry"
+        run: |
           gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev --quiet
       
-      - name: Build image
+      - name: "Build using Makefile"
         run: |
-          # Use GitHub SHA for unique tagging
-          docker build . --file Dockerfile --tag ${{ env.GAR_LOCATION }}/aggregator:${{ github.sha }}
-          docker build . --file Dockerfile --tag ${{ env.GAR_LOCATION }}/aggregator:latest
+          make prod
+          
+      - name: "Tag images for Artifact Registry"
+        run: |
+          # Tag your locally built images for pushing to GAR
+          docker tag telegram_aggregator-aggregator:latest ${{ env.GAR_LOCATION }}/aggregator:${{ github.sha }}
+          docker tag telegram_aggregator-aggregator:latest ${{ env.GAR_LOCATION }}/aggregator:latest
+          
+          docker tag telegram_aggregator-scraper:latest ${{ env.GAR_LOCATION }}/scraper:${{ github.sha }}
+          docker tag telegram_aggregator-scraper:latest ${{ env.GAR_LOCATION }}/scraper:latest
       
-      - name: Push image
+      - name: "Push to Artifact Registry"
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: |
           docker push ${{ env.GAR_LOCATION }}/aggregator:${{ github.sha }}
           docker push ${{ env.GAR_LOCATION }}/aggregator:latest
+          docker push ${{ env.GAR_LOCATION }}/scraper:${{ github.sha }}
+          docker push ${{ env.GAR_LOCATION }}/scraper:latest
