@@ -43,10 +43,6 @@ jobs:
             --zone=${{ secrets.GCP_ZONE }} \
             --project=${{ env.PROJECT_ID }}
           
-          gcloud compute scp .env.prod ${{ secrets.VM_INSTANCE_NAME }}:/opt/app/.env \
-            --zone=${{ secrets.GCP_ZONE }} \
-            --project=${{ env.PROJECT_ID }}
-          
           # Execute deployment
           gcloud compute ssh ${{ secrets.VM_INSTANCE_NAME }} \
             --zone=${{ secrets.GCP_ZONE }} \
