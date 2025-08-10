@@ -24,7 +24,6 @@ jobs:
         with:
           sparse-checkout: |
             docker-compose.prod.yaml
-            .env.prod
           sparse-checkout-cone-mode: false
 
       - name: "Authenticate to Google Cloud"
