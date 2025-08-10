@@ -34,28 +34,58 @@ jobs:
       - name: "Set up Cloud SDK"
         uses: "google-github-actions/setup-gcloud@v1"
 
-      - name: "Deploy using OS Login"
+      - name: "Prepare VM directories"
         run: |
-          echo "🚀 Deploying with OS Login (no SSH keys needed)"
-          
-          # Copy files using OS Login
-          gcloud compute scp docker-compose.prod.yaml ${{ secrets.VM_INSTANCE_NAME }}:/opt/app/ \
-            --zone=${{ secrets.GCP_ZONE }} \
-            --project=${{ env.PROJECT_ID }}
-          
-          # Execute deployment
+          echo "🔧 Setting up VM directories in user home..."
           gcloud compute ssh ${{ secrets.VM_INSTANCE_NAME }} \
             --zone=${{ secrets.GCP_ZONE }} \
             --project=${{ env.PROJECT_ID }} \
             --command="
-              cd /opt/app
+              mkdir -p ~/app/logs/scraper ~/app/logs/aggregator
+              echo '✅ Home directory ready: ~/app'
+              ls -la ~/app
+            "
+
+      - name: "Deploy to VM"
+        run: |
+          echo "🚀 Deploying images with tag: ${{ inputs.image_tag }}"
+          
+          # Copy deployment files to home directory
+          echo "📁 Copying files to home directory..."
+          gcloud compute scp docker-compose.prod.yaml ${{ secrets.VM_INSTANCE_NAME }}:~/app/ \
+            --zone=${{ secrets.GCP_ZONE }} \
+            --project=${{ env.PROJECT_ID }}
+          
+          # Execute deployment
+          echo "🚀 Executing deployment..."
+          gcloud compute ssh ${{ secrets.VM_INSTANCE_NAME }} \
+            --zone=${{ secrets.GCP_ZONE }} \
+            --project=${{ env.PROJECT_ID }} \
+            --command="
+              cd ~/app
+              
+              echo '🔐 Authenticating Docker...'
               gcloud auth configure-docker europe-north1-docker.pkg.dev --quiet
+              
+              echo '📥 Pulling images...'
               docker pull ${{ env.GAR_LOCATION }}/scraper:${{ inputs.image_tag }}
               docker pull ${{ env.GAR_LOCATION }}/aggregator:${{ inputs.image_tag }}
+              
+              echo '🏷️  Tagging images...'
               docker tag ${{ env.GAR_LOCATION }}/scraper:${{ inputs.image_tag }} ${{ env.GAR_LOCATION }}/scraper:latest
               docker tag ${{ env.GAR_LOCATION }}/aggregator:${{ inputs.image_tag }} ${{ env.GAR_LOCATION }}/aggregator:latest
+              
+              echo '🔄 Stopping services...'
               docker compose -f docker-compose.prod.yaml down || true
+              
+              echo '▶️  Starting services...'
               docker compose -f docker-compose.prod.yaml up -d
+              
+              echo '⏳ Waiting for startup...'
               sleep 30
+              
+              echo '✅ Service status:'
               docker compose -f docker-compose.prod.yaml ps
+              
+              echo '🎉 Deployment complete!'
             "
