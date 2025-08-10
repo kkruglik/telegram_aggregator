@@ -1,5 +1,5 @@
-DOCKER_COMPOSE_DEV = docker-compose -f docker-compose.dev.yaml
-DOCKER_COMPOSE_PROD = docker-compose -f docker-compose.prod.yaml
+DOCKER_COMPOSE_DEV = docker compose -f docker-compose.dev.yaml
+DOCKER_COMPOSE_PROD = docker compose -f docker-compose.prod.yaml
 PYTHON = python3
 UV = uv
 
