@@ -11,7 +11,6 @@ on:
 
 env:
   PROJECT_ID: tg-aggregator
-  REGION: europe-north1
   GAR_LOCATION: europe-north1-docker.pkg.dev/tg-aggregator/aggregator-repo
 
 jobs:
@@ -36,65 +35,32 @@ jobs:
       - name: "Set up Cloud SDK"
         uses: "google-github-actions/setup-gcloud@v1"
 
-      - name: "Enable OS Login on VM (if not enabled)"
+      - name: "Deploy using OS Login"
         run: |
-          gcloud compute instances add-metadata ${{ secrets.VM_INSTANCE_NAME }} \
-            --zone=${{ secrets.GCP_ZONE }} \
-            --metadata enable-oslogin=TRUE || true
-
-      - name: "Deploy to VM"
-        run: |
-          echo "🚀 Deploying images with tag: ${{ inputs.image_tag }}"
+          echo "🚀 Deploying with OS Login (no SSH keys needed)"
           
-          # Create deployment script
-          cat > deploy_script.sh << 'EOF'
-          #!/bin/bash
-          set -e
-          
-          cd /opt/app
-          
-          echo '🔐 Setting up Docker authentication...'
-          gcloud auth configure-docker europe-north1-docker.pkg.dev --quiet
-          
-          echo '📥 Pulling images...'
-          docker pull europe-north1-docker.pkg.dev/tg-aggregator/aggregator-repo/scraper:TAG_PLACEHOLDER
-          docker pull europe-north1-docker.pkg.dev/tg-aggregator/aggregator-repo/aggregator:TAG_PLACEHOLDER
-          
-          echo '🏷️  Tagging as latest...'
-          docker tag europe-north1-docker.pkg.dev/tg-aggregator/aggregator-repo/scraper:TAG_PLACEHOLDER europe-north1-docker.pkg.dev/tg-aggregator/aggregator-repo/scraper:latest
-          docker tag europe-north1-docker.pkg.dev/tg-aggregator/aggregator-repo/aggregator:TAG_PLACEHOLDER europe-north1-docker.pkg.dev/tg-aggregator/aggregator-repo/aggregator:latest
-          
-          echo '🔄 Stopping current services...'
-          docker-compose -f docker-compose.prod.yaml down || true
-          
-          echo '▶️  Starting services...'
-          docker-compose -f docker-compose.prod.yaml up -d
-          
-          echo '⏳ Waiting for services to start...'
-          sleep 30
-          
-          echo '✅ Checking status...'
-          docker-compose -f docker-compose.prod.yaml ps
-          
-          echo '🎉 Deployment complete!'
-          EOF
-          
-          # Replace placeholder with actual tag
-          sed -i "s/TAG_PLACEHOLDER/${{ inputs.image_tag }}/g" deploy_script.sh
-          
-          # Copy files to VM
-          echo "📁 Copying deployment files..."
+          # Copy files using OS Login
           gcloud compute scp docker-compose.prod.yaml ${{ secrets.VM_INSTANCE_NAME }}:/opt/app/ \
-            --zone=${{ secrets.GCP_ZONE }}
+            --zone=${{ secrets.GCP_ZONE }} \
+            --project=${{ env.PROJECT_ID }}
           
           gcloud compute scp .env.prod ${{ secrets.VM_INSTANCE_NAME }}:/opt/app/.env \
-            --zone=${{ secrets.GCP_ZONE }}
+            --zone=${{ secrets.GCP_ZONE }} \
+            --project=${{ env.PROJECT_ID }}
           
-          gcloud compute scp deploy_script.sh ${{ secrets.VM_INSTANCE_NAME }}:/tmp/ \
-            --zone=${{ secrets.GCP_ZONE }}
-          
-          # Execute deployment script
-          echo "🚀 Executing deployment..."
+          # Execute deployment
           gcloud compute ssh ${{ secrets.VM_INSTANCE_NAME }} \
             --zone=${{ secrets.GCP_ZONE }} \
-            --command="chmod +x /tmp/deploy_script.sh && /tmp/deploy_script.sh"
+            --project=${{ env.PROJECT_ID }} \
+            --command="
+              cd /opt/app
+              gcloud auth configure-docker europe-north1-docker.pkg.dev --quiet
+              docker pull ${{ env.GAR_LOCATION }}/scraper:${{ inputs.image_tag }}
+              docker pull ${{ env.GAR_LOCATION }}/aggregator:${{ inputs.image_tag }}
+              docker tag ${{ env.GAR_LOCATION }}/scraper:${{ inputs.image_tag }} ${{ env.GAR_LOCATION }}/scraper:latest
+              docker tag ${{ env.GAR_LOCATION }}/aggregator:${{ inputs.image_tag }} ${{ env.GAR_LOCATION }}/aggregator:latest
+              docker compose -f docker-compose.prod.yaml down || true
+              docker compose -f docker-compose.prod.yaml up -d
+              sleep 30
+              docker compose -f docker-compose.prod.yaml ps
+            "
