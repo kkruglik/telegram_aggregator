@@ -24,6 +24,7 @@ jobs:
         with:
           sparse-checkout: |
             docker-compose.build.yaml
+            Makefile
 
           sparse-checkout-cone-mode: false
 
@@ -39,8 +40,8 @@ jobs:
         run: |
           echo "🚀 Deploying registry images to existing telegram_aggregator directory"
           
-          # Copy updated docker-compose (with registry images)
-          gcloud compute scp docker-compose.build.yaml kirillkruglikov@${{ secrets.VM_INSTANCE_NAME }}:~/telegram_aggregator/ \
+          # Copy updated files
+          gcloud compute scp docker-compose.build.yaml Makefile kirillkruglikov@${{ secrets.VM_INSTANCE_NAME }}:~/telegram_aggregator/ \
             --zone=${{ secrets.GCP_ZONE }} \
             --project=${{ env.PROJECT_ID }}
           
