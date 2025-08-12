@@ -23,7 +23,7 @@ jobs:
         uses: "actions/checkout@v4"
         with:
           sparse-checkout: |
-            docker-compose.prod.yaml
+            docker-compose.build.yaml
 
           sparse-checkout-cone-mode: false
 
@@ -40,10 +40,9 @@ jobs:
           echo "🚀 Deploying registry images to existing telegram_aggregator directory"
           
           # Copy updated docker-compose (with registry images)
-          gcloud compute scp docker-compose.prod.yaml kirillkruglikov@${{ secrets.VM_INSTANCE_NAME }}:~/telegram_aggregator/ \
+          gcloud compute scp docker-compose.build.yaml kirillkruglikov@${{ secrets.VM_INSTANCE_NAME }}:~/telegram_aggregator/ \
             --zone=${{ secrets.GCP_ZONE }} \
             --project=${{ env.PROJECT_ID }}
-          
           
           # Execute deployment
           gcloud compute ssh kirillkruglikov@${{ secrets.VM_INSTANCE_NAME }} \
@@ -63,20 +62,6 @@ jobs:
               docker tag ${{ env.GAR_LOCATION }}/scraper:${{ inputs.image_tag }} telegram_aggregator-scraper:latest
               docker tag ${{ env.GAR_LOCATION }}/aggregator:${{ inputs.image_tag }} telegram_aggregator-aggregator:latest
               
-              echo '🔄 Stopping current containers...'
-              docker compose -f docker-compose.prod.yaml down
-              
               echo '▶️  Starting with new images...'
-              docker compose -f docker-compose.prod.yaml up -d
-              
-              echo '⏳ Waiting for services to start...'
-              sleep 30
-              
-              echo '✅ Service status:'
-              docker compose -f docker-compose.prod.yaml ps
-              
-              echo '💾 Database volume status:'
-              docker volume ls | grep postgres
-              
-              echo '🎉 Deployment complete! Same database, new images from registry.'
+              make deploy
             "
