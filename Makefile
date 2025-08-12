@@ -1,5 +1,6 @@
 DOCKER_COMPOSE_DEV = docker compose -f docker-compose.dev.yaml
-DOCKER_COMPOSE_PROD = docker compose -f docker-compose.prod.yaml
+DOCKER_COMPOSE_BUILD = docker compose -f docker-compose.build.yaml
+DOCKER_COMPOSE_DEPLOY = docker compose -f docker-compose.deploy.yaml
 PYTHON = python3
 UV = uv
 
@@ -7,19 +8,16 @@ UV = uv
 help:
 	@echo "Available commands:"
 	@echo "  make dev                    - Build and start dev environment"
-	@echo "  make prod                   - Build and start prod environment"
+	@echo "  make build-registry         - Build images for artifact registry"
 	@echo "  make build-dev              - Build dev Docker images"
-	@echo "  make build-prod             - Build prod Docker images"
 	@echo "  make up-dev                 - Start dev containers"
-	@echo "  make up-prod                - Start prod containers"
 	@echo "  make stop-dev               - Stop dev containers"
-	@echo "  make stop-prod              - Stop prod containers"
 	@echo "  make clean-dev              - Remove dev containers and volumes"
-	@echo "  make clean-prod             - Remove prod containers and volumes"
 	@echo "  make restart-dev            - Restart dev containers"
-	@echo "  make restart-prod           - Restart prod containers"
 	@echo "  make logs-dev               - View dev container logs"
-	@echo "  make logs-prod              - View prod container logs"
+	@echo "  make deploy                 - Deploy to GCP (down + up)"
+	@echo "  make deploy-up              - Start deployment containers"
+	@echo "  make deploy-down            - Stop deployment containers"
 	@echo "  make test                   - Run all tests"
 	@echo "  make test-agg               - Run aggregator tests"
 	@echo "  make test-scraper           - Run scraper tests"
@@ -31,46 +29,39 @@ help:
 up-dev:
 	$(DOCKER_COMPOSE_DEV) up -d
 
-.PHONY: up-prod
-up-prod:
-	$(DOCKER_COMPOSE_PROD) up -d
-
-
 .PHONY: build-dev
 build-dev:
 	$(DOCKER_COMPOSE_DEV) build
 
-.PHONY: build-prod
-build-prod:
-	$(DOCKER_COMPOSE_PROD) build
+.PHONY: build-registry
+build-registry:
+	$(DOCKER_COMPOSE_BUILD) build
 
 .PHONY: dev
 dev: build-dev up-dev
 
-.PHONY: prod
-prod: build-prod up-prod
+.PHONY: deploy-up
+deploy-up:
+	$(DOCKER_COMPOSE_DEPLOY) up -d
+
+.PHONY: deploy-down
+deploy-down:
+	$(DOCKER_COMPOSE_DEPLOY) down
+
+.PHONY: deploy-run
+deploy: deploy-down deploy-up
+
 
 .PHONY: stop-dev
 stop-dev:
 	$(DOCKER_COMPOSE_DEV) down
 
-.PHONY: stop-prod
-stop-prod:
-	$(DOCKER_COMPOSE_PROD) down
-
 .PHONY: clean-dev
 clean-dev:
 	$(DOCKER_COMPOSE_DEV) down -v
 
-.PHONY: clean-prod
-clean-prod:
-	$(DOCKER_COMPOSE_PROD) down -v
-
 .PHONY: restart-dev
 restart-dev: stop-dev up-dev
-
-.PHONY: restart-prod
-restart-prod: stop-prod up-prod
 
 .PHONY: ruff-check
 ruff-check:
@@ -79,10 +70,6 @@ ruff-check:
 .PHONY: logs-dev
 logs-dev:
 	$(DOCKER_COMPOSE_DEV) logs -f
-
-.PHONY: logs-prod
-logs-prod:
-	$(DOCKER_COMPOSE_PROD) logs -f
 
 .PHONY: ruff-format
 ruff-format:
