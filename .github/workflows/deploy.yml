@@ -1,4 +1,4 @@
-name: Deploy to VM
+name: Deploy to VM (Traditional SSH + Registry)
 
 on:
   workflow_dispatch:
@@ -24,6 +24,7 @@ jobs:
         with:
           sparse-checkout: |
             docker-compose.prod.yaml
+
           sparse-checkout-cone-mode: false
 
       - name: "Authenticate to Google Cloud"
@@ -34,58 +35,48 @@ jobs:
       - name: "Set up Cloud SDK"
         uses: "google-github-actions/setup-gcloud@v1"
 
-      - name: "Prepare VM directories"
+      - name: "Deploy to existing setup"
         run: |
-          echo "🔧 Setting up VM directories in user home..."
-          gcloud compute ssh ${{ secrets.VM_INSTANCE_NAME }} \
-            --zone=${{ secrets.GCP_ZONE }} \
-            --project=${{ env.PROJECT_ID }} \
-            --command="
-              mkdir -p ~/app/logs/scraper ~/app/logs/aggregator
-              echo '✅ Home directory ready: ~/app'
-              ls -la ~/app
-            "
-
-      - name: "Deploy to VM"
-        run: |
-          echo "🚀 Deploying images with tag: ${{ inputs.image_tag }}"
+          echo "🚀 Deploying registry images to existing telegram_aggregator directory"
           
-          # Copy deployment files to home directory
-          echo "📁 Copying files to home directory..."
-          gcloud compute scp docker-compose.prod.yaml ${{ secrets.VM_INSTANCE_NAME }}:~/app/ \
+          # Copy updated docker-compose (with registry images)
+          gcloud compute scp docker-compose.prod.yaml kirillkruglikov@${{ secrets.VM_INSTANCE_NAME }}:~/telegram_aggregator/ \
             --zone=${{ secrets.GCP_ZONE }} \
             --project=${{ env.PROJECT_ID }}
           
+          
           # Execute deployment
-          echo "🚀 Executing deployment..."
-          gcloud compute ssh ${{ secrets.VM_INSTANCE_NAME }} \
+          gcloud compute ssh kirillkruglikov@${{ secrets.VM_INSTANCE_NAME }} \
             --zone=${{ secrets.GCP_ZONE }} \
             --project=${{ env.PROJECT_ID }} \
             --command="
-              cd ~/app
+              cd ~/telegram_aggregator
               
-              echo '🔐 Authenticating Docker...'
+              echo '🔐 Authenticating Docker for registry...'
               gcloud auth configure-docker europe-north1-docker.pkg.dev --quiet
               
-              echo '📥 Pulling images...'
+              echo '📥 Pulling registry images...'
               docker pull ${{ env.GAR_LOCATION }}/scraper:${{ inputs.image_tag }}
               docker pull ${{ env.GAR_LOCATION }}/aggregator:${{ inputs.image_tag }}
               
-              echo '🏷️  Tagging images...'
-              docker tag ${{ env.GAR_LOCATION }}/scraper:${{ inputs.image_tag }} ${{ env.GAR_LOCATION }}/scraper:latest
-              docker tag ${{ env.GAR_LOCATION }}/aggregator:${{ inputs.image_tag }} ${{ env.GAR_LOCATION }}/aggregator:latest
+              echo '🏷️  Tagging registry images with local names...'
+              docker tag ${{ env.GAR_LOCATION }}/scraper:${{ inputs.image_tag }} telegram_aggregator-scraper:latest
+              docker tag ${{ env.GAR_LOCATION }}/aggregator:${{ inputs.image_tag }} telegram_aggregator-aggregator:latest
               
-              echo '🔄 Stopping services...'
-              docker compose -f docker-compose.prod.yaml down || true
+              echo '🔄 Stopping current containers...'
+              docker compose -f docker-compose.prod.yaml down
               
-              echo '▶️  Starting services...'
+              echo '▶️  Starting with new images...'
               docker compose -f docker-compose.prod.yaml up -d
               
-              echo '⏳ Waiting for startup...'
+              echo '⏳ Waiting for services to start...'
               sleep 30
               
               echo '✅ Service status:'
               docker compose -f docker-compose.prod.yaml ps
               
-              echo '🎉 Deployment complete!'
+              echo '💾 Database volume status:'
+              docker volume ls | grep postgres
+              
+              echo '🎉 Deployment complete! Same database, new images from registry.'
             "
