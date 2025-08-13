@@ -1,13 +1,10 @@
 name: Deploy to VM
 
 on:
-  workflow_dispatch:
-    inputs:
-      image_tag:
-        description: 'Image tag to deploy (default: latest)'
-        required: false
-        default: 'latest'
-        type: string
+  workflow_run:
+    workflows: ["Build and Push to Artifact Registry"]
+    types: [completed]
+    branches: ["main"]
 
 env:
   PROJECT_ID: tg-aggregator
@@ -15,6 +12,7 @@ env:
 
 jobs:
   deploy:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     environment: production
 
@@ -56,12 +54,12 @@ jobs:
               gcloud auth configure-docker europe-north1-docker.pkg.dev --quiet
               
               echo '📥 Pulling registry images...'
-              docker pull ${{ env.GAR_LOCATION }}/scraper:${{ inputs.image_tag }}
-              docker pull ${{ env.GAR_LOCATION }}/aggregator:${{ inputs.image_tag }}
+              docker pull ${{ env.GAR_LOCATION }}/scraper:latest
+              docker pull ${{ env.GAR_LOCATION }}/aggregator:latest
               
               echo '🏷️  Tagging registry images with local names...'
-              docker tag ${{ env.GAR_LOCATION }}/scraper:${{ inputs.image_tag }} telegram_aggregator-scraper:latest
-              docker tag ${{ env.GAR_LOCATION }}/aggregator:${{ inputs.image_tag }} telegram_aggregator-aggregator:latest
+              docker tag ${{ env.GAR_LOCATION }}/scraper:latest telegram_aggregator-scraper:latest
+              docker tag ${{ env.GAR_LOCATION }}/aggregator:latest telegram_aggregator-aggregator:latest
               
               echo '▶️  Starting with new images...'
               make deploy
