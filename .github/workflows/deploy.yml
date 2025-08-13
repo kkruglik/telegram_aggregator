@@ -12,7 +12,6 @@ on:
 env:
   PROJECT_ID: tg-aggregator
   GAR_LOCATION: europe-north1-docker.pkg.dev/tg-aggregator/aggregator-repo
-  VM_IP: 35.228.226.223
 
 jobs:
   deploy:
@@ -29,56 +28,41 @@ jobs:
 
           sparse-checkout-cone-mode: false
 
+      - name: "Authenticate to Google Cloud"
+        uses: "google-github-actions/auth@v1"
+        with:
+          credentials_json: "${{ secrets.GCP_SERVICE_ACCOUNT }}"
 
-      - name: "Setup SSH connection"
-        run: |
-          # Create SSH directory
-          mkdir -p ~/.ssh
-          
-          # Add private key (proper multi-line handling)
-          cat << 'EOF' > ~/.ssh/deploy_key
-          ${{ secrets.SSH_PRIVATE_KEY }}
-          EOF
-          chmod 600 ~/.ssh/deploy_key
-          
-          # Debug key format
-          echo "Key format check:"
-          head -1 ~/.ssh/deploy_key
-          tail -1 ~/.ssh/deploy_key
-          
-          # Add VM to known hosts
-          ssh-keyscan -H ${{ env.VM_IP }} >> ~/.ssh/known_hosts
-          
-          # Test SSH connection
-          ssh -i ~/.ssh/deploy_key -o ConnectTimeout=10 kirillkruglikov@${{ env.VM_IP }} "echo 'SSH connection successful'"
+      - name: "Set up Cloud SDK"
+        uses: "google-github-actions/setup-gcloud@v1"
 
-      - name: "Deploy to VM"
+      - name: "Deploy to existing setup"
         run: |
           echo "🚀 Deploying registry images to existing telegram_aggregator directory"
           
           # Copy updated files
-          echo "📁 Copying files..."
-          scp -i ~/.ssh/deploy_key docker-compose.deploy.yaml kirillkruglikov@${{ env.VM_IP }}:~/telegram_aggregator/
-          scp -i ~/.ssh/deploy_key Makefile kirillkruglikov@${{ env.VM_IP }}:~/telegram_aggregator/Makefile
+          gcloud compute scp docker-compose.deploy.yaml Makefile kirillkruglikov@${{ secrets.VM_INSTANCE_NAME }}:~/telegram_aggregator/ \
+            --zone=${{ secrets.GCP_ZONE }} \
+            --project=${{ env.PROJECT_ID }}
           
           # Execute deployment
-          ssh -i ~/.ssh/deploy_key kirillkruglikov@${{ env.VM_IP }} "
+          gcloud compute ssh kirillkruglikov@${{ secrets.VM_INSTANCE_NAME }} \
+            --zone=${{ secrets.GCP_ZONE }} \
+            --project=${{ env.PROJECT_ID }} \
+            --command="
               cd ~/telegram_aggregator
-          
+              
               echo '🔐 Authenticating Docker for registry...'
-              echo '${{ secrets.GCP_SERVICE_ACCOUNT }}' | base64 -d > /tmp/gcp-key.json
-              gcloud auth activate-service-account --key-file=/tmp/gcp-key.json
               gcloud auth configure-docker europe-north1-docker.pkg.dev --quiet
-              rm /tmp/gcp-key.json
-          
+              
               echo '📥 Pulling registry images...'
               docker pull ${{ env.GAR_LOCATION }}/scraper:${{ inputs.image_tag }}
               docker pull ${{ env.GAR_LOCATION }}/aggregator:${{ inputs.image_tag }}
-          
+              
               echo '🏷️  Tagging registry images with local names...'
               docker tag ${{ env.GAR_LOCATION }}/scraper:${{ inputs.image_tag }} telegram_aggregator-scraper:latest
               docker tag ${{ env.GAR_LOCATION }}/aggregator:${{ inputs.image_tag }} telegram_aggregator-aggregator:latest
-          
+              
               echo '▶️  Starting with new images...'
               make deploy
             "
