@@ -35,9 +35,12 @@ jobs:
           # Create SSH directory
           mkdir -p ~/.ssh
           
-          # Add private key
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
+          # Add private key (ensure proper line endings)
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" | tr -d '\r' > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
+          
+          # Debug key format
+          head -1 ~/.ssh/deploy_key
           
           # Add VM to known hosts
           ssh-keyscan -H ${{ env.VM_IP }} >> ~/.ssh/known_hosts
