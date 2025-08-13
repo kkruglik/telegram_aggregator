@@ -55,7 +55,7 @@ jobs:
           docker tag telegram_aggregator-scraper:latest ${{ env.GAR_LOCATION }}/scraper:latest
       
       - name: "Push to Artifact Registry"
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        if: (github.event_name == 'push' && github.ref == 'refs/heads/main') || github.event_name == 'workflow_dispatch'
         run: |
           docker push ${{ env.GAR_LOCATION }}/aggregator:${{ github.sha }}
           docker push ${{ env.GAR_LOCATION }}/aggregator:latest
