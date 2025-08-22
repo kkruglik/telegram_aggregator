@@ -1,0 +1,44 @@
+name: "Test aggregator"
+on:
+  pull_request:
+    branches: [ "main" ]
+    paths:
+      - services/aggregator/**
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: 'Image tag to deploy (default: latest)'
+        required: false
+        default: 'latest'
+        type: string
+
+env:
+  PYTHON_VERSION: '3.13'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: "Checkout"
+        uses: "actions/checkout@v4"
+        with:
+          sparse-checkout: |
+            services/aggregator
+            Makefile
+
+      - name: "Install the latest version of uv"
+        uses: "astral-sh/setup-uv@v6"
+
+      - name: "Install Python"
+        uses: "actions/setup-python@v5"
+        with:
+          python-version: "${{ env.PYTHON_VERSION }}"
+
+      - name: "Install dependencies"
+        run: cd services/aggregator && uv sync --frozen
+
+      - name: "Run tests"
+        run: cd services/aggregator && pytest
+
+
+
