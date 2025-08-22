@@ -38,7 +38,7 @@ jobs:
         run: cd services/aggregator && uv sync --frozen
 
       - name: "Run tests"
-        run: cd services/aggregator && pytest
+        run: cd services/aggregator && uv run pytest
 
 
 
