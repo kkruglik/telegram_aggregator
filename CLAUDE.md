@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Structure
 
-This is a Telegram news aggregator system built with Python 3.11+ consisting of two main microservices:
+This is a Telegram news aggregator system built with Python 3.13+ consisting of two main microservices:
 
 1. **Aggregator Service** (`services/aggregator/`) - Main bot service handling user interactions and content delivery
 2. **Scraper Service** (`services/scraper/`) - Scrapes content from Telegram channels via Telethon
@@ -146,7 +146,7 @@ GEMINI_API_KEY=your_gemini_api_key
 
 ## Development Notes
 
-- Python 3.11+ required for aggregator, 3.13+ for scraper
+- Python 3.13+ required for both aggregator and scraper services
 - Uses uv for dependency management (preferred over pip)
 - Ruff for linting and formatting (replacing flake8/black)
 - Google Cloud integration for logging and AI summarization
