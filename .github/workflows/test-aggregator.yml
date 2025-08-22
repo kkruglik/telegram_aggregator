@@ -54,6 +54,3 @@ jobs:
           detailed_summary: true
           comment: true
           updateComment: true
-
-
-
