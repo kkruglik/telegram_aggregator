@@ -12,6 +12,11 @@ on:
         default: 'latest'
         type: string
 
+permissions:
+  checks: write
+  contents: read
+  pull-requests: write
+
 env:
   PYTHON_VERSION: '3.13'
 
@@ -38,7 +43,15 @@ jobs:
         run: cd services/aggregator && uv sync --frozen
 
       - name: "Run tests"
-        run: cd services/aggregator && uv run pytest
+        run: cd services/aggregator && uv run pytest --verbose --junitxml=junit/test-results.xml
+
+      - name: "Publish Test Report"
+        uses: "mikepenz/action-junit-report@v5.6.2"
+        if: success() || failure()
+        with:
+          report_paths: "**/junit/*.xml"
+          include_passed: true
+          detailed_summary: true
 
 
 
