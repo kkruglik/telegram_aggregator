@@ -1,0 +1,63 @@
+version: 2
+updates:
+  # Aggregator service dependencies
+  - package-ecosystem: "pip"
+    directory: "/services/aggregator"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "aggregator"
+    commit-message:
+      prefix: "deps(aggregator)"
+      include: "scope"
+
+  # Scraper service dependencies  
+  - package-ecosystem: "pip"
+    directory: "/services/scraper"
+    schedule:
+      interval: "weekly"
+      day: "monday" 
+      time: "06:00"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "scraper"
+    commit-message:
+      prefix: "deps(scraper)"
+      include: "scope"
+
+  # GitHub Actions dependencies
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+    open-pull-requests-limit: 3
+    labels:
+      - "dependencies"
+      - "github-actions"
+    commit-message:
+      prefix: "deps(actions)"
+      include: "scope"
+
+  # Docker dependencies
+  - package-ecosystem: "docker" 
+    directory: "/services/aggregator"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 3
+    labels:
+      - "dependencies"
+      - "docker"
+
+  - package-ecosystem: "docker"
+    directory: "/services/scraper" 
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 3
+    labels:
+      - "dependencies" 
+      - "docker"
