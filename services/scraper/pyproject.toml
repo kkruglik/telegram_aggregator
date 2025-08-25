@@ -9,7 +9,7 @@ dependencies = [
     "google-cloud-secret-manager==2.23.3",
     "python-dotenv==1.1.0",
     "pyyaml==6.0.2",
-    "telethon==1.39.0",
+    "telethon==1.40.0",
     "uvicorn==0.35.0",
 ]
 
