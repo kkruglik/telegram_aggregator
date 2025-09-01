@@ -32,7 +32,7 @@ jobs:
           credentials_json: "${{ secrets.GCP_SERVICE_ACCOUNT }}"
 
       - name: "Set up Cloud SDK"
-        uses: "google-github-actions/setup-gcloud@v1"
+        uses: "google-github-actions/setup-gcloud@v3"
 
       - name: "Deploy to existing setup"
         run: |
