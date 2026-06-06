@@ -8,7 +8,6 @@ from aiogram.types import Message  # type: ignore
 from ..states import KeywordsStates
 from ..utils import create_keywords_feed_keyboard, create_keywords_actions_keyboard
 from ...core.registry import UserRegistry
-from ...db.repository import DatabaseRepository
 
 logger = logging.getLogger("news_aggregator")
 
@@ -97,10 +96,7 @@ async def process_keywords_clear_callback(callback_query: types.CallbackQuery):
     feed = user.user_feeds.get(channel_id)
     channel_name = feed.channel_name if feed else str(channel_id)
 
-    logger.info(f"User {user_id} clearing keywords for channel {channel_id}")
-    user.channel_filters.pop(channel_id, None)
-    await DatabaseRepository.update_user_channels_filters(user.id, user.channel_filters)
-    logger.info(f"User {user_id} keywords cleared for channel {channel_id}")
+    await user.clear_channel_filters(channel_id)
 
     await callback_query.message.edit_text(
         _format_keywords_message(channel_name, set()),
@@ -130,12 +126,7 @@ async def process_keywords_input(message: Message, state: FSMContext):
         await message.answer("No valid keywords found. Please try again.")
         return
 
-    existing = user.channel_filters.get(channel_id, set())
-    user.channel_filters[channel_id] = existing | new_keywords
-
-    logger.info(f"User {user.id} appending keywords {new_keywords} to channel {channel_id}. Total: {user.channel_filters[channel_id]}")
-    await DatabaseRepository.update_user_channels_filters(user.id, user.channel_filters)
-    logger.info(f"User {user.id} keywords saved for channel {channel_id}")
+    await user.add_channel_filters(channel_id, new_keywords)
 
     feed = user.user_feeds.get(channel_id)
     channel_name = feed.channel_name if feed else str(channel_id)

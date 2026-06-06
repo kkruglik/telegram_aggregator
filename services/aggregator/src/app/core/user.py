@@ -94,21 +94,18 @@ class User:
                 logger.error(f"Failed to unsubscribe from feed {channel_id}: {result.message}")
                 return result
 
-    async def add_channel_filter(self, channel_id: int, keyword: str):
-        if channel_id not in self.channel_filters:
-            self.channel_filters[channel_id] = set()
-
-        self.channel_filters[channel_id].add(keyword)
-        logger.info(f"User {self.id} added keyword '{keyword}' for channel {channel_id}")
+    async def add_channel_filters(self, channel_id: int, keywords: set[str]):
+        existing = self.channel_filters.get(channel_id, set())
+        self.channel_filters[channel_id] = existing | keywords
+        logger.info(f"User {self.id} appending keywords {keywords} to channel {channel_id}. Total: {self.channel_filters[channel_id]}")
         await DatabaseRepository.update_user_channels_filters(self.id, self.channel_filters)
-        logger.info(f"User {self.id} channel {channel_id} filters saved: {self.channel_filters[channel_id]}")
+        logger.info(f"User {self.id} channel {channel_id} filters saved")
 
-    async def remove_channel_filter(self, channel_id: int, keyword: str):
-        if channel_id in self.channel_filters:
-            self.channel_filters[channel_id].discard(keyword)
-            logger.info(f"User {self.id} removed keyword '{keyword}' from channel {channel_id}")
-            await DatabaseRepository.update_user_channels_filters(self.id, self.channel_filters)
-            logger.info(f"User {self.id} channel {channel_id} filters saved: {self.channel_filters[channel_id]}")
+    async def clear_channel_filters(self, channel_id: int):
+        self.channel_filters.pop(channel_id, None)
+        logger.info(f"User {self.id} cleared filters for channel {channel_id}")
+        await DatabaseRepository.update_user_channels_filters(self.id, self.channel_filters)
+        logger.info(f"User {self.id} channel {channel_id} filters cleared in db")
 
     def get_user_feeds(self):
         logger.debug(f"Retrieved feed list for user {self.id}")
