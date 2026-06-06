@@ -5,7 +5,7 @@ from aiogram.filters import Command  # type: ignore
 from aiogram.fsm.context import FSMContext  # type: ignore
 from aiogram.types import Message  # type: ignore
 
-from ..states import FeedStates
+from ..states import FeedStates, KeywordsStates
 from ..utils import create_unsubscribe_keyboard
 from ...core.enums import ResponseStatus
 from ...core.registry import UserRegistry, FeedsRegistry
@@ -48,8 +48,16 @@ async def process_feed_name(message: Message, state: FSMContext):
     match result.status:
         case ResponseStatus.OK:
             await message.answer(
-                f"✅ You successfully subscribed for this channel: {feed.channel_name}!"
+                f"✅ Subscribed to <b>{feed.channel_name}</b>\n\n"
+                "🔍 <b>Set keyword filters</b>\n\n"
+                "Only posts that contain these words will be delivered to you.\n\n"
+                "<i>Example:</i> <code>politics, economy, AI</code>\n\n"
+                "Send keywords separated by commas, or /skip to receive all posts.",
+                parse_mode="HTML",
             )
+            await state.update_data(channel_id=feed.channel_id)
+            await state.set_state(KeywordsStates.waiting_for_keywords)
+            return
         case ResponseStatus.LIMIT_REACHED:
             await message.answer(
                 "❌ You've reached the limit of feeds. Upgrade to premium to add more feeds!"
@@ -61,7 +69,7 @@ async def process_feed_name(message: Message, state: FSMContext):
         case _:
             await message.answer("❌ An unexpected error occurred. Please try again.")
 
-    await state.clear()
+    await state.clear()  # only reached on non-OK cases
 
 
 @router.message(Command("unsubscribe"))

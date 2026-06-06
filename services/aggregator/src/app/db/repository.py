@@ -1,3 +1,4 @@
+import json
 import logging
 from contextlib import asynccontextmanager
 from datetime import time
@@ -367,6 +368,17 @@ class DatabaseRepository:
             return result
 
         return Response.error(status=ResponseStatus.UNKNOWN_ERROR, message="Unknown error")
+
+    @classmethod
+    async def update_user_channels_filters(cls, user_id: int, channel_filters: dict[int, set[str]]) -> Response:
+        serializable = json.dumps({str(k): list(v) for k, v in channel_filters.items()})
+        query = """
+                UPDATE users
+                SET channel_filters = $2
+                WHERE id = $1
+                RETURNING channel_filters
+                """
+        return await cls._execute_fetchrow(query, user_id, serializable)
 
     @classmethod
     async def add_post_to_db(

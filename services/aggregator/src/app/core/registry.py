@@ -1,4 +1,5 @@
 import asyncio
+import json
 import logging
 from urllib.parse import urlparse
 
@@ -26,13 +27,17 @@ class UserRegistry:
         if existing_users_response.is_success:
             existing_users: list[dict] = existing_users_response.data
             for user in existing_users:
-                user_id, user_tz, notification_time, is_premium = (
+                user_id, user_tz, notification_time, is_premium, raw_filters = (
                     user["id"],
                     user["timezone"],
                     user["notification_time"],
                     user["is_premium"],
+                    user["channel_filters"],
                 )
-                user_cls = User(user_id, notification_time, user_tz, is_premium)
+                if isinstance(raw_filters, str):
+                    raw_filters = json.loads(raw_filters)
+                channel_filters = {int(k): set(v) for k, v in (raw_filters or {}).items()}
+                user_cls = User(user_id, notification_time, user_tz, is_premium, channel_filters)
                 cls._users[user_id] = user_cls
                 logger.info(f"User {user_id}|{user_tz}|{notification_time} loaded from db.")
                 cls.schedule_user_updates(user_id)

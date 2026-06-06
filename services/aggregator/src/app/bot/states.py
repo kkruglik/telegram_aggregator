@@ -10,3 +10,7 @@ class RegistrationStates(StatesGroup):
     waiting_for_location = State()
     waiting_for_timezone = State()
     waiting_for_notification_time = State()
+
+
+class KeywordsStates(StatesGroup):
+    waiting_for_keywords = State()

@@ -14,7 +14,14 @@ logger = logging.getLogger("news_aggregator")
 
 class User:
     _bot = None
-    __slots__ = ("id", "user_feeds", "notification_time", "timezone", "is_premium")
+    __slots__ = (
+        "id",
+        "user_feeds",
+        "notification_time",
+        "timezone",
+        "is_premium",
+        "channel_filters",
+    )
 
     def __init__(
         self,
@@ -22,12 +29,18 @@ class User:
         notification_time: time | None = None,
         timezone: str | None = "EET",
         is_premium: bool = False,
+        channel_filters: dict[int, set[str]] | None = None,
     ):
         self.id = user_id
         self.user_feeds: dict[int, TelegramFeed] = {}
         self.notification_time = notification_time
         self.timezone = timezone
         self.is_premium = is_premium
+
+        if channel_filters is None:
+            self.channel_filters = {}
+        else:
+            self.channel_filters = channel_filters
 
         logger.debug(f"User {user_id} initialized")
 
@@ -81,6 +94,22 @@ class User:
                 logger.error(f"Failed to unsubscribe from feed {channel_id}: {result.message}")
                 return result
 
+    async def add_channel_filter(self, channel_id: int, keyword: str):
+        if channel_id not in self.channel_filters:
+            self.channel_filters[channel_id] = set()
+
+        self.channel_filters[channel_id].add(keyword)
+        logger.info(f"User {self.id} added keyword '{keyword}' for channel {channel_id}")
+        await DatabaseRepository.update_user_channels_filters(self.id, self.channel_filters)
+        logger.info(f"User {self.id} channel {channel_id} filters saved: {self.channel_filters[channel_id]}")
+
+    async def remove_channel_filter(self, channel_id: int, keyword: str):
+        if channel_id in self.channel_filters:
+            self.channel_filters[channel_id].discard(keyword)
+            logger.info(f"User {self.id} removed keyword '{keyword}' from channel {channel_id}")
+            await DatabaseRepository.update_user_channels_filters(self.id, self.channel_filters)
+            logger.info(f"User {self.id} channel {channel_id} filters saved: {self.channel_filters[channel_id]}")
+
     def get_user_feeds(self):
         logger.debug(f"Retrieved feed list for user {self.id}")
         return self.user_feeds
@@ -110,6 +139,8 @@ class User:
                 logger.info(f"Feed {feed_name} is empty, skipping")
                 continue
 
+            feed_filters = self.channel_filters.get(feed.channel_id, set())
+
             feed_header = f"<b>@{feed.channel_name} feed</b>: \n\n"
             feed_content = feed.content["posts"]
             post_ids = list(feed_content.keys())
@@ -118,6 +149,13 @@ class User:
 
             for post_id in post_ids:
                 post_content = feed_content[post_id]
+
+                if feed_filters and not any(
+                    kw.lower() in post_content["text"].lower() for kw in feed_filters
+                ):
+                    logger.info(f"Post {post_id} skipped: no keywords matched for channel {feed.channel_id}")
+                    continue
+
                 post_text = f"{post_content['summary']} \n{post_content['url']}\n\n---\n\n"
 
                 if len(current_message + post_text) > MESSAGE_LIMIT:

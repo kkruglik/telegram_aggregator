@@ -79,6 +79,7 @@ async def set_bot_commands(bot: Bot):
         BotCommand(command="unsubscribe", description="Unsubscribe from a feed"),
         BotCommand(command="notification_time", description="Change notification time"),
         BotCommand(command="timezone", description="Change timezone"),
+        BotCommand(command="keywords", description="Set keyword filters for a channel"),
     ]
 
     await bot.set_my_commands(commands, BotCommandScopeDefault())

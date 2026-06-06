@@ -36,7 +36,7 @@ services:
       - ./services/scraper/src:/app/src
       - ./services/scraper/config:/app/config
       - ~/.config/gcloud:/root/.config/gcloud
-      - ./services/scraper/telegram_scraper_local.session:/app/telegram_scraper_local.session
+      - ./services/scraper/telegram_scraper.session:/app/telegram_scraper.session
     depends_on:
       postgres:
         condition: service_healthy

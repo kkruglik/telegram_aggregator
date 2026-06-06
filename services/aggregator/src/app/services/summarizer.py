@@ -17,7 +17,7 @@ async def generate_summary(client, input_text: str):
     async with semaphore:
         try:
             response = await client.aio.models.generate_content(
-                model="gemini-2.0-flash-lite",
+                model="gemini-3.1-flash-lite",
                 contents=prompt,
                 config=types.GenerateContentConfig(max_output_tokens=1200, temperature=0.2),
             )

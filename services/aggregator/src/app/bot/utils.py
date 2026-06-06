@@ -56,3 +56,23 @@ def create_unsubscribe_keyboard(feeds):
 
     builder.adjust(1)
     return builder.as_markup()
+
+
+def create_keywords_feed_keyboard(feeds, channel_filters: dict):
+    builder = InlineKeyboardBuilder()
+    for feed in feeds.values():
+        count = len(channel_filters.get(feed.channel_id, set()))
+        label = f"{feed.channel_name}  [{count} keywords]" if count else feed.channel_name
+        builder.button(text=label, callback_data=f"__kw__{feed.channel_id}")
+
+    builder.adjust(1)
+    return builder.as_markup()
+
+
+def create_keywords_actions_keyboard(channel_id: int):
+    builder = InlineKeyboardBuilder()
+    builder.button(text="Add keywords", callback_data=f"__kw_add__{channel_id}")
+    builder.button(text="Clear all", callback_data=f"__kw_clear__{channel_id}")
+    builder.button(text="Close", callback_data="__kw_close__")
+    builder.adjust(2, 1)
+    return builder.as_markup()
