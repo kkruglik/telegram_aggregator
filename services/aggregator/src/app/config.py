@@ -73,13 +73,6 @@ class OpenAIConfig(ConfigSection):
 
 
 @dataclass
-class GeminiConfig(ConfigSection):
-    """Gemini configuration section."""
-
-    token: Optional[str] = None
-
-
-@dataclass
 class AppConfig:
     """Main application configuration class that combines all config sections."""
 
@@ -91,7 +84,6 @@ class AppConfig:
     scraper: Optional[ScraperConfig] = None
     gcp: Optional[GCPConfig] = None
     bot: Optional[BotConfig] = None
-    gemini: Optional[GeminiConfig] = None
     openai: Optional[OpenAIConfig] = None
 
     def load_from_yaml(self, yaml_path: Path) -> None:
@@ -125,7 +117,7 @@ class AppConfig:
         logger.info(f"Loading missing values from Secret Manager for project {self.gcp.project_id}")
 
         # Check all sections
-        section_names = ["database", "scraper", "bot", "gemini", "openai"]
+        section_names = ["database", "scraper", "bot", "openai"]
         for section_name in section_names:
             if not hasattr(self, section_name) or getattr(self, section_name) is None:
                 continue
@@ -167,9 +159,6 @@ class AppConfig:
 
         if "bot" in config_dict:
             self.bot = BotConfig(**config_dict["bot"])
-
-        if "gemini" in config_dict:
-            self.gemini = GeminiConfig(**config_dict["gemini"])
 
         if "openai" in config_dict:
             self.openai = OpenAIConfig(**config_dict["openai"])

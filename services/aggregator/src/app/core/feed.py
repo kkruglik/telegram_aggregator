@@ -126,8 +126,8 @@ class TelegramFeed:
         try:
             resp = await client.generate(input_text)
             new_summary = resp.summary
-        except ValueError as e:
-            logger.error(f"Failed to generate summary. Error: {e}")
+        except Exception as e:
+            logger.error(f"Failed to generate summary for post {post_id}: {type(e).__name__}: {e}")
             new_summary = input_text[:100]
 
         return post_id, new_summary

@@ -15,9 +15,6 @@ scraper:
   host: scraper
   port: 8000
 
-gemini:
-  token: null
-
 openai:
   token: null
   model_name: gpt-5.4-mini

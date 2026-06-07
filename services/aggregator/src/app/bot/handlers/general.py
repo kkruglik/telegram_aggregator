@@ -43,7 +43,6 @@ async def cmd_upgrade_premium(message: Message):
     # await user.upgrade_user_to_premium()
 
 
-
 @router.message()
 async def echo(message: Message):
     """Echo all other messages - fallback handler"""
