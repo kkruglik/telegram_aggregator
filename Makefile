@@ -1,7 +1,6 @@
 DOCKER_COMPOSE_DEV = docker compose -f docker-compose.dev.yaml
 DOCKER_COMPOSE_BUILD = docker compose -f docker-compose.build.yaml
 DOCKER_COMPOSE_DEPLOY = docker compose -f docker-compose.deploy.yaml
-PYTHON = python3
 UV = uv
 
 .PHONY: help
@@ -18,9 +17,9 @@ help:
 	@echo "  make deploy                 - Deploy to GCP (down + up)"
 	@echo "  make deploy-up              - Start deployment containers"
 	@echo "  make deploy-down            - Stop deployment containers"
-	@echo "  make test                   - Run all tests"
-	@echo "  make test-agg               - Run aggregator tests"
-	@echo "  make test-scraper           - Run scraper tests"
+	@echo "  make sync                   - Install dependencies"
+	@echo "  make run-local              - Run bot locally"
+	@echo "  make test                   - Run tests"
 	@echo "  make ruff-check             - Run ruff linter"
 	@echo "  make ruff-format            - Run ruff formatter"
 	@echo "  make ruff                   - Run both ruff check and format"
@@ -51,7 +50,6 @@ deploy-down:
 .PHONY: deploy-run
 deploy: deploy-down deploy-up
 
-
 .PHONY: stop-dev
 stop-dev:
 	$(DOCKER_COMPOSE_DEV) down
@@ -63,28 +61,29 @@ clean-dev:
 .PHONY: restart-dev
 restart-dev: stop-dev up-dev
 
-.PHONY: ruff-check
-ruff-check:
-	$(PYTHON) -m ruff check services/aggregator services/scraper
-
 .PHONY: logs-dev
 logs-dev:
 	$(DOCKER_COMPOSE_DEV) logs -f
 
+.PHONY: sync
+sync:
+	$(UV) sync
+
+.PHONY: run-local
+run-local:
+	$(UV) run python -m src.app.main
+
+.PHONY: ruff-check
+ruff-check:
+	$(UV) run ruff check src
+
 .PHONY: ruff-format
 ruff-format:
-	$(PYTHON) -m ruff format services/aggregator services/scraper
+	$(UV) run ruff format src
 
 .PHONY: ruff
 ruff: ruff-check ruff-format
 
-.PHONY: test-agg
-test-agg:
-	$(PYTHON) -m pytest services/aggregator/tests
-
-.PHONY: test-scraper
-test-scraper:
-	$(PYTHON) -m pytest services/scraper/tests
-
 .PHONY: test
-test: test-agg test-scraper
+test:
+	$(UV) run pytest tests

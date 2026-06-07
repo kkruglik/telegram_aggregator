@@ -41,13 +41,9 @@ class DatabaseConfig(ConfigSection):
 class ScraperConfig(ConfigSection):
     """Scraper configuration section."""
 
-    host: str
-    port: str
-
-    @cached_property
-    def url(self) -> str:
-        """Generate scraper URL from components."""
-        return f"http://{self.host}:{self.port}"
+    session_name: str
+    api_hash: Optional[str] = None
+    api_id: Optional[int] = None
 
 
 @dataclass
@@ -145,6 +141,15 @@ class AppConfig:
                         logger.warning(
                             f"Could not load {section_name}.{field_name} from Secret Manager"
                         )
+
+        if self.scraper and self.scraper.session_name:
+            session_path = os.path.join(
+                self._base_dir, f"{self.scraper.session_name}.session"
+            )
+            if self._get_secret_file("telegram_scraper_session", session_path):
+                logger.info(f"Loaded Telegram session to {session_path} from Secret Manager")
+            else:
+                logger.warning("Could not load Telegram session from Secret Manager")
 
     def _create_from_dict(self, config_dict: Dict[str, Dict[str, Any]]) -> None:
         """Create configuration sections from dictionary."""

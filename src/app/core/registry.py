@@ -6,10 +6,9 @@ from urllib.parse import urlparse
 from .feed import TelegramFeed
 from .user import User
 from ..db.repository import DatabaseRepository
-from ..services.tasks_scheduler import TasksScheduler
-from ..utils.scraper_utils import get_channel_id
+from ..services.scraper import scraper_client
 from ..services.summarizer import summarizer_client
-from ..config import config
+from ..services.tasks_scheduler import TasksScheduler
 
 
 logger = logging.getLogger("news_aggregator")
@@ -167,7 +166,7 @@ class FeedsRegistry:
             for feed in existing_feeds:
                 channel_id, channel_name = feed["id"], feed["channel_name"]
                 cls.feeds[channel_id] = TelegramFeed(
-                    channel_id, channel_name, summarizer_client, config.scraper.url
+                    channel_id, channel_name, summarizer_client, scraper_client
                 )
                 cls.feeds_users_count[channel_id] = 1
                 logger.info(f"Feed {channel_id}|{channel_name} loaded from db.")
@@ -235,7 +234,7 @@ class FeedsRegistry:
             logger.warning(f"Invalid channel name '{feed_name}': {e}")
             return None
 
-        channel_id, channel_name = await get_channel_id(normalized_feed_name, config.scraper.url)
+        channel_id, channel_name = await scraper_client.get_channel_id(normalized_feed_name)
 
         logger.info(
             f"Creating feed {normalized_feed_name} with id {channel_id} and name {channel_name}"
@@ -254,7 +253,7 @@ class FeedsRegistry:
             result = await DatabaseRepository.create_feed(channel_id, channel_name)
             if result.is_success:
                 cls.feeds[channel_id] = TelegramFeed(
-                    channel_id, channel_name, summarizer_client, config.scraper.url
+                    channel_id, channel_name, summarizer_client, scraper_client
                 )
                 cls.feeds_users_count[channel_id] = 1
                 logger.info(f"New feed {channel_id} created with 1 subscriber")

@@ -4,7 +4,9 @@ from datetime import datetime, timedelta, timezone
 
 from telethon import TelegramClient
 
-logger = logging.getLogger("telegram_scraper_service")
+from ..config import config
+
+logger = logging.getLogger("news_aggregator")
 
 
 class TelegramScraperQueue:
@@ -44,9 +46,7 @@ class TelegramScraperQueue:
         """Worker that processes queued tasks"""
         while self.running:
             if not self.client.is_connected():
-                logger.warning(
-                    "TelegramScraperQueue client not connected. Reconnecting..."
-                )
+                logger.warning("TelegramScraperQueue client not connected. Reconnecting...")
                 try:
                     await asyncio.wait_for(self.client.connect(), timeout=10)
                     logger.info("Reconnection successful")
@@ -72,9 +72,7 @@ class TelegramScraperQueue:
             except asyncio.CancelledError:
                 break
             except Exception as e:
-                logger.error(
-                    f"Unexpected error in queue processor: {str(e)}", exc_info=True
-                )
+                logger.error(f"Unexpected error in queue processor: {str(e)}", exc_info=True)
 
     async def _enqueue_task(self, task_func, *args, **kwargs):
         """Add a task to the queue and wait for result"""
@@ -91,9 +89,7 @@ class TelegramScraperQueue:
 
     async def get_today_messages_by_name(self, channel_name: str):
         """Queue a task to get today's messages"""
-        return await self._enqueue_task(
-            self._get_today_messages, channel_name=channel_name
-        )
+        return await self._enqueue_task(self._get_today_messages, channel_name=channel_name)
 
     async def get_channel_id(self, channel: str):
         """Queue a task to get a channel ID"""
@@ -161,3 +157,8 @@ class TelegramScraperQueue:
         except Exception as e:
             logger.error(f"Error getting channel ID for {channel}: {str(e)}")
             raise
+
+
+scraper_client = TelegramScraperQueue(
+    config.scraper.api_id, config.scraper.api_hash, config.scraper.session_name
+)

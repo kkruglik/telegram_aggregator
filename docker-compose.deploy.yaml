@@ -21,25 +21,6 @@ services:
     networks:
       - tg_network
 
-  scraper:
-    image: europe-north1-docker.pkg.dev/tg-aggregator/aggregator-repo/scraper:latest
-    container_name: tg_scraper
-    restart: unless-stopped
-    environment:
-      - CONFIG_NAME=config-prod.yaml
-      - GOOGLE_APPLICATION_CREDENTIALS=/root/.config/gcloud/application_default_credentials.json
-    ports:
-      - "127.0.0.1:8000:8000"
-    volumes:
-      - /opt/app/logs/scraper:/app/logs
-      - ~/.config/gcloud:/root/.config/gcloud:ro
-      - /opt/app/telegram_scraper.session:/app/telegram_scraper.session
-    depends_on:
-      postgres:
-        condition: service_healthy
-    networks:
-      - tg_network
-
   aggregator:
     image: europe-north1-docker.pkg.dev/tg-aggregator/aggregator-repo/aggregator:latest
     container_name: tg_aggregator
@@ -53,8 +34,6 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-      scraper:
-        condition: service_started
     networks:
       - tg_network
 

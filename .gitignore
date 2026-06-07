@@ -190,7 +190,5 @@ Thumbs.db
 /services/aggregator/logs/
 /services/scraper/logs/
 
-services/aggregator/config/config-local-docker.yaml
-services/aggregator/config/config-local.yaml
-services/scraper/config/config-local.yaml
-services/scraper/config/config-local-docker.yaml
+config/config-local-docker.yaml
+config/config-local.yaml
