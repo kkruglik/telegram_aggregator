@@ -49,6 +49,8 @@ jobs:
         run: uv sync --frozen
 
       - name: "Run tests"
+        env:
+          CONFIG_NAME: config-prod.yaml
         run: uv run pytest --verbose --junitxml=junit/test-results.xml
 
       - name: "Publish Test Report"
