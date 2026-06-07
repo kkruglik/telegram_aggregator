@@ -23,7 +23,7 @@ async def main():
 
     User.initialize(bot=bot)
 
-    await FeedsRegistry.initialize(scraper_url=config.scraper.url)
+    await FeedsRegistry.initialize()
     await UserRegistry.initialize()
 
     logger.info("Starting news aggregator")
