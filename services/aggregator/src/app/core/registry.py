@@ -9,6 +9,7 @@ from ..db.repository import DatabaseRepository
 from ..services.tasks_scheduler import TasksScheduler
 from ..utils.scraper_utils import get_channel_id
 from ..services.summarizer import summarizer_client
+from ..config import config
 
 
 logger = logging.getLogger("news_aggregator")
@@ -131,8 +132,6 @@ class UserRegistry:
             job_id=f"{user.id}_update_users_feeds",
             cron=f"{update_minute} {update_hour} * * *",
             timezone_name=user_timezone,
-            summarizer_client=summarizer_client,
-            scraper_url=FeedsRegistry.scraper_url,
         )
 
         cls._scheduler.add_job(
@@ -153,7 +152,6 @@ class UserRegistry:
 class FeedsRegistry:
     feeds: dict[int, TelegramFeed] = {}
     feeds_users_count: dict[int, int] = {}
-    scraper_url = None
 
     @classmethod
     async def initialize(cls, scraper_url: str) -> None:
@@ -169,7 +167,9 @@ class FeedsRegistry:
             existing_feeds = existing_feeds_response.data
             for feed in existing_feeds:
                 channel_id, channel_name = feed["id"], feed["channel_name"]
-                cls.feeds[channel_id] = TelegramFeed(channel_id, channel_name)
+                cls.feeds[channel_id] = TelegramFeed(
+                    channel_id, channel_name, summarizer_client, config.scraper.url
+                )
                 cls.feeds_users_count[channel_id] = 1
                 logger.info(f"Feed {channel_id}|{channel_name} loaded from db.")
         else:
@@ -182,7 +182,7 @@ class FeedsRegistry:
     @classmethod
     async def update_all_feeds(cls) -> None:
         logger.info(f"Updating all {len(cls.feeds)} feeds")
-        tasks = [feed.update(summarizer_client, cls.scraper_url) for feed in cls.feeds.values()]
+        tasks = [feed.update() for feed in cls.feeds.values()]
         await asyncio.gather(*tasks)
 
     @classmethod
@@ -258,7 +258,7 @@ class FeedsRegistry:
         else:
             result = await DatabaseRepository.create_feed(channel_id, channel_name)
             if result.is_success:
-                cls.feeds[channel_id] = TelegramFeed(channel_id, channel_name)
+                cls.feeds[channel_id] = TelegramFeed(channel_id, channel_name, summarizer_client, cls.scraper_url)
                 cls.feeds_users_count[channel_id] = 1
                 logger.info(f"New feed {channel_id} created with 1 subscriber")
             else:
