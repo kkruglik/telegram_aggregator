@@ -370,7 +370,9 @@ class DatabaseRepository:
         return Response.error(status=ResponseStatus.UNKNOWN_ERROR, message="Unknown error")
 
     @classmethod
-    async def update_user_channels_filters(cls, user_id: int, channel_filters: dict[int, set[str]]) -> Response:
+    async def update_user_channels_filters(
+        cls, user_id: int, channel_filters: dict[int, set[str]]
+    ) -> Response:
         serializable = json.dumps({str(k): list(v) for k, v in channel_filters.items()})
         query = """
                 UPDATE users
