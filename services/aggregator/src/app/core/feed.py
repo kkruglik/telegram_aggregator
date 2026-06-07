@@ -13,20 +13,33 @@ logger = logging.getLogger("news_aggregator")
 
 
 class TelegramFeed:
-    __slots__ = ("channel_id", "channel_name", "last_updated", "content")
+    __slots__ = (
+        "channel_id",
+        "channel_name",
+        "last_updated",
+        "content",
+        "_summarizer_client",
+        "_scraper_url",
+    )
 
-    def __init__(self, channel_id: int, channel_name: str):
+    def __init__(
+        self, channel_id: int, channel_name: str, client: SummarizeProtocol, scraper_url: str
+    ):
         self.channel_id = channel_id
         self.channel_name = channel_name
         self.last_updated = None
         self.content: FeedContent = {"posts": {}}
+        self._summarizer_client = client
+        self._scraper_url = scraper_url
 
         logger.info(f"TelegramFeed {channel_id=} initialized")
 
     @log_async_performance()
-    async def _get_todays_posts(self, scraper_url: str) -> None:
+    async def _get_todays_posts(self) -> None:
         try:
-            messages = await get_today_messages_by_channel_name(self.channel_name, scraper_url)
+            messages = await get_today_messages_by_channel_name(
+                self.channel_name, self._scraper_url
+            )
             logger.info(f"{len(messages)} messages received")
             updated_at = datetime.now()
             for message in reversed(messages["messages"]):
@@ -48,16 +61,16 @@ class TelegramFeed:
             logger.error(f"Error updating {self.channel_id}: {str(e)}")
 
     @log_async_performance()
-    async def update(self, summarizer_client: SummarizeProtocol, scraper_url: str):
+    async def update(self):
         """Update the feed with new content from the Telegram channel"""
         logger.info(f"Updating feed {self.channel_id} from channel {self.channel_id}")
-        await self._get_todays_posts(scraper_url)
-        await self._summarize_content(summarizer_client)
+        await self._get_todays_posts()
+        await self._summarize_content()
         await self._add_content_to_db()
         logger.info(f"Feed {self.channel_id} updated.")
 
     @log_async_performance()
-    async def _summarize_content(self, client: SummarizeProtocol):
+    async def _summarize_content(self):
         logger.info(f"Summarizing feed {self.channel_id}")
 
         tasks = []
@@ -65,7 +78,7 @@ class TelegramFeed:
         for post_id in self.content["posts"].keys():
             if self.content["posts"][post_id]["summary"] is None:
                 text = self.content["posts"][post_id]["text"]
-                tasks.append(self._get_or_generate_summary(client, self.channel_id, post_id, text))
+                tasks.append(self._get_or_generate_summary(self.channel_id, post_id, text))
 
         results = await asyncio.gather(*tasks)
 
@@ -104,9 +117,7 @@ class TelegramFeed:
         logger.info(f"Cache cleared for channel {self.channel_id}")
 
     @log_async_performance()
-    async def _get_or_generate_summary(
-        self, client: SummarizeProtocol, channel_id: int, post_id: int, input_text: str
-    ):
+    async def _get_or_generate_summary(self, channel_id: int, post_id: int, input_text: str):
         logger.info(f"Processing summary for post {post_id} from channel {channel_id}")
         result = await DatabaseRepository.get_post_summary(channel_id, post_id)
 
@@ -124,7 +135,7 @@ class TelegramFeed:
         )
 
         try:
-            resp = await client.generate(input_text)
+            resp = await self._summarizer_client.generate(input_text)
             new_summary = resp.summary
         except Exception as e:
             logger.error(f"Failed to generate summary for post {post_id}: {type(e).__name__}: {e}")

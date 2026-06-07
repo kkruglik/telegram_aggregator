@@ -4,8 +4,7 @@ from aiogram import Router
 from aiogram.filters import Command
 from aiogram.types import Message
 
-from ...core.registry import FeedsRegistry, UserRegistry
-from ...services.summarizer import summarizer_client
+from ...core.registry import UserRegistry
 
 logger = logging.getLogger("news_aggregator")
 
@@ -19,7 +18,7 @@ async def debug_trigger_feed_update(message: Message):
     await message.answer("Running user full update!")
 
     await message.answer("Updating feeds")
-    await user.update_users_feeds(summarizer_client, FeedsRegistry.scraper_url)
+    await user.update_users_feeds()
 
     await message.answer("Summarizing feeds!")
     await user.send_feed_update()

@@ -2,7 +2,6 @@ import asyncio
 import logging
 from datetime import time
 
-from ..services.summarizer import SummarizeProtocol
 
 from aiogram import Bot  # type: ignore
 
@@ -116,9 +115,9 @@ class User:
         return self.user_feeds
 
     @log_async_performance()
-    async def update_users_feeds(self, summarizer_client: SummarizeProtocol, scraper_url: str):
+    async def update_users_feeds(self):
         logger.info(f"Updating users feeds {self.id}: {len(self.user_feeds)} feeds")
-        tasks = [feed.update(summarizer_client, scraper_url) for feed in self.user_feeds.values()]
+        tasks = [feed.update() for feed in self.user_feeds.values()]
 
         results = await asyncio.gather(*tasks, return_exceptions=True)
 
