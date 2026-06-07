@@ -2,6 +2,8 @@ import asyncio
 import logging
 from datetime import time
 
+from ..services.summarizer import SummarizeProtocol
+
 from aiogram import Bot  # type: ignore
 
 from ..db.repository import DatabaseRepository
@@ -97,7 +99,9 @@ class User:
     async def add_channel_filters(self, channel_id: int, keywords: set[str]):
         existing = self.channel_filters.get(channel_id, set())
         self.channel_filters[channel_id] = existing | keywords
-        logger.info(f"User {self.id} appending keywords {keywords} to channel {channel_id}. Total: {self.channel_filters[channel_id]}")
+        logger.info(
+            f"User {self.id} appending keywords {keywords} to channel {channel_id}. Total: {self.channel_filters[channel_id]}"
+        )
         await DatabaseRepository.update_user_channels_filters(self.id, self.channel_filters)
         logger.info(f"User {self.id} channel {channel_id} filters saved")
 
@@ -112,9 +116,9 @@ class User:
         return self.user_feeds
 
     @log_async_performance()
-    async def update_users_feeds(self):
+    async def update_users_feeds(self, summarizer_client: SummarizeProtocol, scraper_url: str):
         logger.info(f"Updating users feeds {self.id}: {len(self.user_feeds)} feeds")
-        tasks = [feed.update() for feed in self.user_feeds.values()]
+        tasks = [feed.update(summarizer_client, scraper_url) for feed in self.user_feeds.values()]
 
         results = await asyncio.gather(*tasks, return_exceptions=True)
 
@@ -150,7 +154,9 @@ class User:
                 if feed_filters and not any(
                     kw.lower() in post_content["text"].lower() for kw in feed_filters
                 ):
-                    logger.info(f"Post {post_id} skipped: no keywords matched for channel {feed.channel_id}")
+                    logger.info(
+                        f"Post {post_id} skipped: no keywords matched for channel {feed.channel_id}"
+                    )
                     continue
 
                 post_text = f"{post_content['summary']} \n{post_content['url']}\n\n---\n\n"

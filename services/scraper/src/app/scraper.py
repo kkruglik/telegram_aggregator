@@ -106,7 +106,7 @@ class TelegramScraperQueue:
         """Get messages from the last 24 hours"""
         channel_entity = channel_name or channel_id
 
-        logger.info(f"Getting messages from last 24 hours for channel {channel_id}")
+        logger.info(f"Getting messages from last 24 hours for channel {channel_entity}")
 
         # Make cutoff_time timezone-aware by using UTC
         cutoff_time = datetime.now(tz=timezone.utc) - timedelta(hours=24)

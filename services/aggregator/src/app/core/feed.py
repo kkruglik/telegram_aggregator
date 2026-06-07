@@ -5,7 +5,7 @@ from datetime import datetime
 from .enums import ResponseStatus
 from ..data_types import FeedContent, Post
 from ..db.repository import DatabaseRepository
-from ..services.summarizer import generate_summary
+from ..services.summarizer import SummarizeProtocol
 from ..utils.scraper_utils import get_today_messages_by_channel_name
 from ..utils.utils import log_async_performance
 
@@ -14,8 +14,6 @@ logger = logging.getLogger("news_aggregator")
 
 class TelegramFeed:
     __slots__ = ("channel_id", "channel_name", "last_updated", "content")
-    _client = None
-    _scraper_url: str | None = None
 
     def __init__(self, channel_id: int, channel_name: str):
         self.channel_id = channel_id
@@ -25,19 +23,10 @@ class TelegramFeed:
 
         logger.info(f"TelegramFeed {channel_id=} initialized")
 
-    @classmethod
-    def initialize(cls, client, scraper_url: str):
-        cls._client = client
-        cls._scraper_url = scraper_url
-
     @log_async_performance()
-    async def _get_todays_posts(self) -> None:
-        if self._scraper_url is None:
-            raise ValueError("Scraper URL is not set")
+    async def _get_todays_posts(self, scraper_url: str) -> None:
         try:
-            messages = await get_today_messages_by_channel_name(
-                self.channel_name, self._scraper_url
-            )
+            messages = await get_today_messages_by_channel_name(self.channel_name, scraper_url)
             logger.info(f"{len(messages)} messages received")
             updated_at = datetime.now()
             for message in reversed(messages["messages"]):
@@ -59,16 +48,16 @@ class TelegramFeed:
             logger.error(f"Error updating {self.channel_id}: {str(e)}")
 
     @log_async_performance()
-    async def update(self):
+    async def update(self, summarizer_client: SummarizeProtocol, scraper_url: str):
         """Update the feed with new content from the Telegram channel"""
         logger.info(f"Updating feed {self.channel_id} from channel {self.channel_id}")
-        await self._get_todays_posts()
-        await self._summarize_content()
+        await self._get_todays_posts(scraper_url)
+        await self._summarize_content(summarizer_client)
         await self._add_content_to_db()
         logger.info(f"Feed {self.channel_id} updated.")
 
     @log_async_performance()
-    async def _summarize_content(self):
+    async def _summarize_content(self, client: SummarizeProtocol):
         logger.info(f"Summarizing feed {self.channel_id}")
 
         tasks = []
@@ -76,7 +65,7 @@ class TelegramFeed:
         for post_id in self.content["posts"].keys():
             if self.content["posts"][post_id]["summary"] is None:
                 text = self.content["posts"][post_id]["text"]
-                tasks.append(self._get_or_generate_summary(self.channel_id, post_id, text))
+                tasks.append(self._get_or_generate_summary(client, self.channel_id, post_id, text))
 
         results = await asyncio.gather(*tasks)
 
@@ -115,7 +104,9 @@ class TelegramFeed:
         logger.info(f"Cache cleared for channel {self.channel_id}")
 
     @log_async_performance()
-    async def _get_or_generate_summary(self, channel_id: int, post_id: int, input_text: str):
+    async def _get_or_generate_summary(
+        self, client: SummarizeProtocol, channel_id: int, post_id: int, input_text: str
+    ):
         logger.info(f"Processing summary for post {post_id} from channel {channel_id}")
         result = await DatabaseRepository.get_post_summary(channel_id, post_id)
 
@@ -131,5 +122,12 @@ class TelegramFeed:
         logger.info(
             f"No summary found in database for post {post_id} from channel {channel_id}. Generating a new one"
         )
-        new_summary = await generate_summary(client=self._client, input_text=input_text)
-        return post_id, new_summary.text
+
+        try:
+            resp = await client.generate(input_text)
+            new_summary = resp.summary
+        except ValueError as e:
+            logger.error(f"Failed to generate summary. Error: {e}")
+            new_summary = input_text[:100]
+
+        return post_id, new_summary

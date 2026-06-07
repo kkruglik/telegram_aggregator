@@ -3,11 +3,8 @@ import logging.config
 import os
 from pathlib import Path
 
-from google import genai  # type: ignore
-
 from .bot.bot import init_bot
 from .config import initialize_config
-from .core.feed import TelegramFeed
 from .core.registry import UserRegistry, FeedsRegistry
 from .core.user import User
 from .db.repository import DatabaseRepository
@@ -29,8 +26,6 @@ async def main():
 
     config = initialize_config(config_path)
 
-    client = genai.Client(api_key=config.gemini.token)
-
     await DatabaseRepository.initialize(config.database.url)
 
     bot, dp = init_bot(config.bot.token)
@@ -38,7 +33,6 @@ async def main():
     await set_bot_commands(bot)
 
     User.initialize(bot=bot)
-    TelegramFeed.initialize(client=client, scraper_url=config.scraper.url)
 
     await FeedsRegistry.initialize(scraper_url=config.scraper.url)
     await UserRegistry.initialize()
