@@ -19,11 +19,7 @@ def _format_keywords_message(channel_name: str, keywords: set) -> str:
         return f"📌 <b>{channel_name}</b>\n\nNo keyword filters set. All posts will be delivered."
 
     keywords_list = "\n".join(f"  • {kw}" for kw in sorted(keywords))
-    return (
-        f"📌 <b>{channel_name}</b>\n\n"
-        f"Active keywords ({len(keywords)}):\n"
-        f"{keywords_list}"
-    )
+    return f"📌 <b>{channel_name}</b>\n\nActive keywords ({len(keywords)}):\n{keywords_list}"
 
 
 @router.message(Command("keywords"))
@@ -40,7 +36,12 @@ async def cmd_keywords(message: Message):
     await message.answer("Select a channel to manage keyword filters:", reply_markup=keyboard)
 
 
-@router.callback_query(F.data.startswith("__kw__") & ~F.data.startswith("__kw_add__") & ~F.data.startswith("__kw_clear__") & (F.data != "__kw_close__"))
+@router.callback_query(
+    F.data.startswith("__kw__")
+    & ~F.data.startswith("__kw_add__")
+    & ~F.data.startswith("__kw_clear__")
+    & (F.data != "__kw_close__")
+)
 async def process_keywords_feed(callback_query: types.CallbackQuery):
     channel_id = int(callback_query.data.replace("__kw__", ""))
     user_id = callback_query.from_user.id
@@ -109,7 +110,9 @@ async def process_keywords_clear_callback(callback_query: types.CallbackQuery):
 @router.message(KeywordsStates.waiting_for_keywords, Command("skip"))
 async def process_keywords_skip(message: Message, state: FSMContext):
     data = await state.get_data()
-    logger.info(f"User {message.from_user.id} skipped adding keywords for channel {data.get('channel_id')}")
+    logger.info(
+        f"User {message.from_user.id} skipped adding keywords for channel {data.get('channel_id')}"
+    )
     await state.clear()
     await message.answer("No keywords added.")
 

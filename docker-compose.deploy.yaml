@@ -33,6 +33,7 @@ services:
     volumes:
       - /opt/app/logs/scraper:/app/logs
       - ~/.config/gcloud:/root/.config/gcloud:ro
+      - /opt/app/telegram_scraper.session:/app/telegram_scraper.session
     depends_on:
       postgres:
         condition: service_healthy

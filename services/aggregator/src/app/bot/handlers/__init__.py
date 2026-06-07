@@ -1,6 +1,6 @@
 from aiogram import Router  # type: ignore
 
-from . import registration, subscription, general, keywords
+from . import debug, general, keywords, registration, subscription
 
 
 def setup_handlers() -> Router:
@@ -10,6 +10,7 @@ def setup_handlers() -> Router:
     main_router.include_router(registration.router)
     main_router.include_router(subscription.router)
     main_router.include_router(keywords.router)
+    main_router.include_router(debug.router)
     main_router.include_router(general.router)
 
     return main_router

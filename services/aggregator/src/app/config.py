@@ -65,10 +65,11 @@ class BotConfig(ConfigSection):
 
 
 @dataclass
-class GeminiConfig(ConfigSection):
-    """Gemini configuration section."""
-
-    token: Optional[str] = None
+class OpenAIConfig(ConfigSection):
+    token: str | None = None
+    temperature: float | None = None
+    model_name: str | None = None
+    system_prompt: str | None = None
 
 
 @dataclass
@@ -83,7 +84,7 @@ class AppConfig:
     scraper: Optional[ScraperConfig] = None
     gcp: Optional[GCPConfig] = None
     bot: Optional[BotConfig] = None
-    gemini: Optional[GeminiConfig] = None
+    openai: Optional[OpenAIConfig] = None
 
     def load_from_yaml(self, yaml_path: Path) -> None:
         """Load configuration from YAML file."""
@@ -116,7 +117,7 @@ class AppConfig:
         logger.info(f"Loading missing values from Secret Manager for project {self.gcp.project_id}")
 
         # Check all sections
-        section_names = ["database", "scraper", "bot", "gemini"]
+        section_names = ["database", "scraper", "bot", "openai"]
         for section_name in section_names:
             if not hasattr(self, section_name) or getattr(self, section_name) is None:
                 continue
@@ -159,8 +160,8 @@ class AppConfig:
         if "bot" in config_dict:
             self.bot = BotConfig(**config_dict["bot"])
 
-        if "gemini" in config_dict:
-            self.gemini = GeminiConfig(**config_dict["gemini"])
+        if "openai" in config_dict:
+            self.openai = OpenAIConfig(**config_dict["openai"])
 
     def _get_secret(self, secret_id: str, version_id: str = "latest") -> Optional[str]:
         """Get secret from Google Secret Manager."""
@@ -199,3 +200,10 @@ def initialize_config(yaml_path: Path) -> AppConfig:
     app_config.load_from_secret_manager()
     logger.info("Configuration initialization complete")
     return app_config
+
+
+_config_name = os.environ.get("CONFIG_NAME")
+assert _config_name, "CONFIG_NAME environment variable not set"
+assert _config_name.endswith(".yaml"), "CONFIG_NAME must end with .yaml"
+
+config = initialize_config(Path(__file__).resolve().parents[2] / "config" / _config_name)

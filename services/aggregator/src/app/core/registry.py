@@ -8,6 +8,8 @@ from .user import User
 from ..db.repository import DatabaseRepository
 from ..services.tasks_scheduler import TasksScheduler
 from ..utils.scraper_utils import get_channel_id
+from ..services.summarizer import summarizer_client
+
 
 logger = logging.getLogger("news_aggregator")
 
@@ -129,6 +131,8 @@ class UserRegistry:
             job_id=f"{user.id}_update_users_feeds",
             cron=f"{update_minute} {update_hour} * * *",
             timezone_name=user_timezone,
+            summarizer_client=summarizer_client,
+            scraper_url=FeedsRegistry.scraper_url,
         )
 
         cls._scheduler.add_job(
@@ -178,7 +182,7 @@ class FeedsRegistry:
     @classmethod
     async def update_all_feeds(cls) -> None:
         logger.info(f"Updating all {len(cls.feeds)} feeds")
-        tasks = [feed.update() for feed in cls.feeds.values()]
+        tasks = [feed.update(summarizer_client, cls.scraper_url) for feed in cls.feeds.values()]
         await asyncio.gather(*tasks)
 
     @classmethod
