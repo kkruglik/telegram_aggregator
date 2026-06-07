@@ -2,7 +2,6 @@ import asyncio
 import logging
 from datetime import time
 
-from ..services.summarizer import SummarizeProtocol
 
 from aiogram import Bot  # type: ignore
 

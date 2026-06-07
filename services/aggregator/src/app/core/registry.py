@@ -258,7 +258,9 @@ class FeedsRegistry:
         else:
             result = await DatabaseRepository.create_feed(channel_id, channel_name)
             if result.is_success:
-                cls.feeds[channel_id] = TelegramFeed(channel_id, channel_name, summarizer_client, cls.scraper_url)
+                cls.feeds[channel_id] = TelegramFeed(
+                    channel_id, channel_name, summarizer_client, cls.scraper_url
+                )
                 cls.feeds_users_count[channel_id] = 1
                 logger.info(f"New feed {channel_id} created with 1 subscriber")
             else:
