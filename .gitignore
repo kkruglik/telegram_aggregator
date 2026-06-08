@@ -192,3 +192,4 @@ Thumbs.db
 
 config/config-local-docker.yaml
 config/config-local.yaml
+create_session.py
