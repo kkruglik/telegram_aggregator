@@ -54,11 +54,9 @@ jobs:
               gcloud auth configure-docker europe-north1-docker.pkg.dev --quiet
               
               echo '📥 Pulling registry images...'
-              docker pull ${{ env.GAR_LOCATION }}/scraper:latest
               docker pull ${{ env.GAR_LOCATION }}/aggregator:latest
-              
+
               echo '🏷️  Tagging registry images with local names...'
-              docker tag ${{ env.GAR_LOCATION }}/scraper:latest telegram_aggregator-scraper:latest
               docker tag ${{ env.GAR_LOCATION }}/aggregator:latest telegram_aggregator-aggregator:latest
               
               echo '▶️  Starting with new images...'

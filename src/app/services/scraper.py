@@ -4,7 +4,9 @@ from datetime import datetime, timedelta, timezone
 
 from telethon import TelegramClient
 
-logger = logging.getLogger("telegram_scraper_service")
+from ..config import config
+
+logger = logging.getLogger("news_aggregator")
 
 
 class TelegramScraperQueue:
@@ -16,10 +18,13 @@ class TelegramScraperQueue:
 
     async def start(self):
         """Start the queue worker"""
-        if self.running:
+        if self.running and self.worker_task and not self.worker_task.done():
+            logger.info("TelegramScraperQueue already running, skipping start")
             return
 
-        await self.client.start()
+        if not self.client.is_connected():
+            await self.client.start()
+
         self.running = True
         self.worker_task = asyncio.create_task(self._process_queue())
         logger.info("TelegramScraperQueue started")
@@ -42,11 +47,10 @@ class TelegramScraperQueue:
 
     async def _process_queue(self):
         """Worker that processes queued tasks"""
+        logger.debug(f"Queue worker started, current queue size={self.queue.qsize()}")
         while self.running:
             if not self.client.is_connected():
-                logger.warning(
-                    "TelegramScraperQueue client not connected. Reconnecting..."
-                )
+                logger.warning("TelegramScraperQueue client not connected. Reconnecting...")
                 try:
                     await asyncio.wait_for(self.client.connect(), timeout=10)
                     logger.info("Reconnection successful")
@@ -59,31 +63,36 @@ class TelegramScraperQueue:
                     await asyncio.sleep(5)
                     continue
 
+            logger.debug(f"Queue worker waiting for next task, queue size={self.queue.qsize()}")
             try:
                 task_func, args, kwargs, future = await self.queue.get()
+                logger.info(f"Queue worker picked up: {task_func.__name__} kwargs={kwargs}, remaining={self.queue.qsize()}")
                 try:
                     result = await task_func(self.client, *args, **kwargs)
                     future.set_result(result)
+                    logger.info(f"Queue worker done: {task_func.__name__} kwargs={kwargs}")
                 except Exception as e:
-                    logger.error(f"Error processing task: {str(e)}", exc_info=True)
+                    logger.error(f"Error processing task {task_func.__name__}: {str(e)}", exc_info=True)
                     future.set_exception(e)
                 finally:
                     self.queue.task_done()
             except asyncio.CancelledError:
+                logger.info("Queue worker cancelled")
                 break
             except Exception as e:
-                logger.error(
-                    f"Unexpected error in queue processor: {str(e)}", exc_info=True
-                )
+                logger.error(f"Unexpected error in queue processor: {str(e)}", exc_info=True)
+        logger.info("Queue worker exited")
 
     async def _enqueue_task(self, task_func, *args, **kwargs):
-        """Add a task to the queue and wait for result"""
-        if not self.running:
-            await self.start()
-
+        logger.info(f"Enqueuing {task_func.__name__} kwargs={kwargs}, queue size before={self.queue.qsize()}")
         future = asyncio.Future()
         await self.queue.put((task_func, args, kwargs, future))
-        return await future
+        logger.info(f"Enqueued {task_func.__name__} kwargs={kwargs}, queue size after={self.queue.qsize()}")
+        try:
+            return await asyncio.wait_for(future, timeout=60)
+        except asyncio.TimeoutError:
+            logger.error(f"Task {task_func.__name__} kwargs={kwargs} timed out after 60s")
+            raise
 
     async def get_today_messages_by_id(self, channel_id: int):
         """Queue a task to get today's messages"""
@@ -91,9 +100,7 @@ class TelegramScraperQueue:
 
     async def get_today_messages_by_name(self, channel_name: str):
         """Queue a task to get today's messages"""
-        return await self._enqueue_task(
-            self._get_today_messages, channel_name=channel_name
-        )
+        return await self._enqueue_task(self._get_today_messages, channel_name=channel_name)
 
     async def get_channel_id(self, channel: str):
         """Queue a task to get a channel ID"""
@@ -161,3 +168,8 @@ class TelegramScraperQueue:
         except Exception as e:
             logger.error(f"Error getting channel ID for {channel}: {str(e)}")
             raise
+
+
+scraper_client = TelegramScraperQueue(
+    config.scraper.api_id, config.scraper.api_hash, config.scraper.session_name
+)

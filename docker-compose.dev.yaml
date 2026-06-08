@@ -21,45 +21,22 @@ services:
     networks:
       - tg_network
 
-  scraper:
-    build:
-      context: ./services/scraper
-      dockerfile: Dockerfile
-    container_name: tg_scraper
-    environment:
-      - CONFIG_NAME=config-local-docker.yaml
-      - GOOGLE_APPLICATION_CREDENTIALS=/root/.config/gcloud/application_default_credentials.json
-    ports:
-      - "8000:8000"
-    volumes:
-      - ./services/scraper/logs:/app/logs
-      - ./services/scraper/src:/app/src
-      - ./services/scraper/config:/app/config
-      - ~/.config/gcloud:/root/.config/gcloud
-      - ./services/scraper/telegram_scraper.session:/app/telegram_scraper.session
-    depends_on:
-      postgres:
-        condition: service_healthy
-    networks:
-      - tg_network
-
   aggregator:
     build:
-      context: ./services/aggregator
+      context: ./
       dockerfile: Dockerfile
     container_name: tg_aggregator
     environment:
       - CONFIG_NAME=config-local-docker.yaml
     volumes:
-      - ./services/aggregator/logs:/app/logs
-      - ./services/aggregator/src:/app/src
-      - ./services/aggregator/config:/app/config
+      - ./logs:/app/logs
+      - ./src:/app/src
+      - ./config:/app/config
       - ~/.config/gcloud:/root/.config/gcloud
+      - ./telegram_scraper_local.session:/app/telegram_scraper_local.session
     depends_on:
       postgres:
         condition: service_healthy
-      scraper:
-        condition: service_started
     networks:
       - tg_network
 

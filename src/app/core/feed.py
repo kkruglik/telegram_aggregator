@@ -1,3 +1,4 @@
+from ..services.scraper import TelegramScraperQueue
 import asyncio
 import logging
 from datetime import datetime
@@ -6,7 +7,6 @@ from .enums import ResponseStatus
 from ..data_types import FeedContent, Post
 from ..db.repository import DatabaseRepository
 from ..services.summarizer import SummarizeProtocol
-from ..utils.scraper_utils import get_today_messages_by_channel_name
 from ..utils.utils import log_async_performance
 
 logger = logging.getLogger("news_aggregator")
@@ -19,27 +19,29 @@ class TelegramFeed:
         "last_updated",
         "content",
         "_summarizer_client",
-        "_scraper_url",
+        "_scraper_client",
     )
 
     def __init__(
-        self, channel_id: int, channel_name: str, client: SummarizeProtocol, scraper_url: str
+        self,
+        channel_id: int,
+        channel_name: str,
+        summarizer_client: SummarizeProtocol,
+        scraper_client: TelegramScraperQueue,
     ):
         self.channel_id = channel_id
         self.channel_name = channel_name
         self.last_updated = None
         self.content: FeedContent = {"posts": {}}
-        self._summarizer_client = client
-        self._scraper_url = scraper_url
+        self._summarizer_client = summarizer_client
+        self._scraper_client = scraper_client
 
         logger.info(f"TelegramFeed {channel_id=} initialized")
 
     @log_async_performance()
     async def _get_todays_posts(self) -> None:
         try:
-            messages = await get_today_messages_by_channel_name(
-                self.channel_name, self._scraper_url
-            )
+            messages = await self._scraper_client.get_today_messages_by_name(self.channel_name)
             logger.info(f"{len(messages)} messages received")
             updated_at = datetime.now()
             for message in reversed(messages["messages"]):
