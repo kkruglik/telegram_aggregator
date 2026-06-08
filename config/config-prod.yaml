@@ -12,7 +12,7 @@ bot:
   token: null
 
 scraper:
-  session_name: null
+  session_name: telegram_scraper
   api_id: null
   api_hash: null
 
