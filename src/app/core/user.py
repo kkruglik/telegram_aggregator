@@ -161,9 +161,12 @@ class User:
                 post_text = f"{post_content['summary']} \n{post_content['url']}\n\n---\n\n"
 
                 if len(current_message + post_text) > MESSAGE_LIMIT:
-                    await self._bot.send_message(
-                        chat_id=self.id, text=current_message, parse_mode="HTML"
-                    )
+                    try:
+                        await self._bot.send_message(
+                            chat_id=self.id, text=current_message, parse_mode="HTML"
+                        )
+                    except Exception as e:
+                        logger.error(f"Failed to send message to user {self.id}: {e}")
                     await asyncio.sleep(1)
 
                     current_message = feed_header + post_text
@@ -173,9 +176,12 @@ class User:
                 del feed_content[post_id]
 
             if current_message != feed_header:
-                await self._bot.send_message(
-                    chat_id=self.id, text=current_message, parse_mode="HTML"
-                )
+                try:
+                    await self._bot.send_message(
+                        chat_id=self.id, text=current_message, parse_mode="HTML"
+                    )
+                except Exception as e:
+                    logger.error(f"Failed to send message to user {self.id}: {e}")
                 await asyncio.sleep(1)
 
         for feed in self.user_feeds.values():
