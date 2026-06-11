@@ -41,7 +41,10 @@ class UserRegistry:
                 channel_filters = {int(k): set(v) for k, v in (raw_filters or {}).items()}
                 user_cls = User(user_id, notification_time, user_tz, is_premium, channel_filters)
                 cls._users[user_id] = user_cls
-                logger.info(f"User {user_id}|{user_tz}|{notification_time} loaded from db.")
+                logger.info(
+                    f"User {user_id} loaded from db: tz={user_tz}, notification_time={notification_time}, "
+                    f"is_premium={is_premium}, channel_filters={channel_filters}"
+                )
                 cls.schedule_user_updates(user_id)
         else:
             msg = f"Failed to load users from db. Error: {existing_users_response.message}"

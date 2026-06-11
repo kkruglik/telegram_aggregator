@@ -132,14 +132,18 @@ class User:
 
     @log_async_performance()
     async def send_feed_update(self):
-        logger.info(f"Send feed update for user {self.id}")
+        logger.info(
+            f"Send feed update for user {self.id}: feeds={list(self.user_feeds.keys())}, "
+            f"channel_filters={self.channel_filters}"
+        )
         MESSAGE_LIMIT = 4096
         for feed_name, feed in self.user_feeds.items():
             if not feed.content["posts"]:
-                logger.info(f"Feed {feed_name} is empty, skipping")
+                logger.info(f"User {self.id} feed {feed.channel_id} ({feed.channel_name}) is empty, skipping")
                 continue
 
             feed_filters = self.channel_filters.get(feed.channel_id, set())
+            logger.info(f"User {self.id} feed {feed.channel_id} ({feed.channel_name}): {len(feed_filters)} filters active")
 
             feed_header = f"<b>@{feed.channel_name} feed</b>: \n\n"
             feed_content = feed.content["posts"]
@@ -154,7 +158,7 @@ class User:
                     kw.lower() in post_content["text"].lower() for kw in feed_filters
                 ):
                     logger.info(
-                        f"Post {post_id} skipped: no keywords matched for channel {feed.channel_id}"
+                        f"User {self.id} post {post_id} skipped: no keywords matched for channel {feed.channel_id}"
                     )
                     continue
 
