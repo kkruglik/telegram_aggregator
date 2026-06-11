@@ -42,7 +42,7 @@ class TelegramFeed:
     async def _get_todays_posts(self) -> None:
         try:
             messages = await self._scraper_client.get_today_messages_by_name(self.channel_name)
-            logger.info(f"{len(messages)} messages received")
+            logger.info(f"Feed {self.channel_id} ({self.channel_name}): {len(messages['messages'])} messages received")
             updated_at = datetime.now()
             for message in reversed(messages["messages"]):
                 if message["id"] not in self.content["posts"]:
