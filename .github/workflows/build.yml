@@ -9,6 +9,14 @@ on:
       - pyproject.toml
       - Makefile
       - docker-compose.*.yaml
+  pull_request:
+    branches: [ "main" ]
+    paths:
+      - src/**
+      - Dockerfile
+      - pyproject.toml
+      - Makefile
+      - docker-compose.*.yaml
   workflow_dispatch:
     inputs:
       image_tag:
@@ -23,30 +31,41 @@ env:
   GAR_LOCATION: europe-north1-docker.pkg.dev/tg-aggregator/aggregator-repo
 
 jobs:
-  build-and-push:
+  build:
+    name: "Build (PR check)"
     runs-on: ubuntu-latest
-    
+    if: github.event_name == 'pull_request'
     steps:
       - name: "Checkout"
         uses: "actions/checkout@v4"
-      
+
+      - name: "Build using Makefile"
+        run: make build-registry
+
+  build-and-push:
+    name: "Build and Push"
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    steps:
+      - name: "Checkout"
+        uses: "actions/checkout@v4"
+
       - name: "Authenticate to Google Cloud"
         id: "auth"
         uses: "google-github-actions/auth@v1"
         with:
           credentials_json: "${{ secrets.GCP_SERVICE_ACCOUNT }}"
-      
+
       - name: "Set up Cloud SDK"
         uses: "google-github-actions/setup-gcloud@v1"
-      
+
       - name: "Configure Docker for Artifact Registry"
         run: |
           gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev --quiet
-      
+
       - name: "Build using Makefile"
-        run: |
-          make build-registry
-          
+        run: make build-registry
+
       - name: "Tag images for Artifact Registry"
         run: |
           docker tag telegram_aggregator-aggregator:latest ${{ env.GAR_LOCATION }}/aggregator:${{ github.sha }}
