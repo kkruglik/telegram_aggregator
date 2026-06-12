@@ -9,6 +9,7 @@ from ..db.repository import DatabaseRepository
 from .feed import TelegramFeed
 from .enums import ResponseStatus, Response
 from ..utils.utils import log_async_performance
+from ..utils.text import find_matched_keyword
 
 logger = logging.getLogger("news_aggregator")
 
@@ -143,7 +144,7 @@ class User:
                 continue
 
             feed_filters = self.channel_filters.get(feed.channel_id, set())
-            logger.info(f"User {self.id} feed {feed.channel_id} ({feed.channel_name}): {len(feed_filters)} filters active")
+            logger.info(f"User {self.id} feed {feed.channel_id} ({feed.channel_name}): {len(feed_filters)} filters active: {feed_filters}")
 
             feed_header = f"<b>@{feed.channel_name} feed</b>: \n\n"
             feed_content = feed.content["posts"]
@@ -154,15 +155,18 @@ class User:
             for post_id in post_ids:
                 post_content = feed_content[post_id]
 
-                if feed_filters and not any(
-                    kw.lower() in post_content["text"].lower() for kw in feed_filters
-                ):
-                    logger.info(
-                        f"User {self.id} post {post_id} skipped: no keywords matched for channel {feed.channel_id}"
-                    )
-                    continue
+                if feed_filters:
+                    matched = find_matched_keyword(post_content["text"], feed_filters)
+                    if matched is None:
+                        logger.info(
+                            f"User {self.id} post {post_id} skipped: no keywords matched for channel {feed.channel_id}"
+                        )
+                        continue
+                    keyword_label = f"🔍 <i>{matched}</i>\n"
+                else:
+                    keyword_label = ""
 
-                post_text = f"{post_content['summary']} \n{post_content['url']}\n\n---\n\n"
+                post_text = f"{keyword_label}{post_content['summary']} \n{post_content['url']}\n\n---\n\n"
 
                 if len(current_message + post_text) > MESSAGE_LIMIT:
                     try:
