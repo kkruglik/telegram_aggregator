@@ -9,8 +9,6 @@ on:
       - pyproject.toml
       - Makefile
       - docker-compose.*.yaml
-  pull_request:
-    branches: [ "main" ]
   workflow_dispatch:
     inputs:
       image_tag:
@@ -27,7 +25,6 @@ env:
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
-    if: github.actor != 'dependabot[bot]'
     
     steps:
       - name: "Checkout"
@@ -56,7 +53,6 @@ jobs:
           docker tag telegram_aggregator-aggregator:latest ${{ env.GAR_LOCATION }}/aggregator:latest
 
       - name: "Push to Artifact Registry"
-        if: (github.event_name == 'push' && github.ref == 'refs/heads/main') || github.event_name == 'workflow_dispatch'
         run: |
           docker push ${{ env.GAR_LOCATION }}/aggregator:${{ github.sha }}
           docker push ${{ env.GAR_LOCATION }}/aggregator:latest
