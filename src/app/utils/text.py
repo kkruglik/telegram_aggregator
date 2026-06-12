@@ -27,7 +27,7 @@ def find_matched_keyword(text: str, keywords: set[str]) -> str | None:
     text_lemmas = {_lemma(t) for t in _tokenize(text)}
     for kw in keywords:
         kw_lemmas = {_lemma(t) for t in _tokenize(kw)}
-        if kw_lemmas and kw_lemmas <= text_lemmas:
+        if kw_lemmas and kw_lemmas.issubset(text_lemmas):
             logger.debug(f"Keyword matched: '{kw}' (lemmas: {kw_lemmas})")
             return kw
     return None
