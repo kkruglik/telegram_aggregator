@@ -3,6 +3,16 @@ import asyncio
 import logging
 from datetime import datetime, timedelta, timezone
 
+
+from telethon.errors import FloodWaitError
+from tenacity import (
+    before_sleep_log,
+    retry,
+    retry_if_exception_type,
+    stop_after_attempt,
+    wait_exponential,
+)
+
 from telethon import TelegramClient
 
 from ..config import config
@@ -17,6 +27,12 @@ class TelegramScraperQueue:
         self.running = False
         self.worker_task = None
 
+    @retry(
+        retry=retry_if_exception_type((ConnectionError, OSError, TimeoutError, FloodWaitError)),
+        wait=wait_exponential(multiplier=1, min=4, max=10),
+        stop=stop_after_attempt(3),
+        before_sleep=before_sleep_log(logger, logging.WARNING),
+    )
     async def start(self):
         """Start the queue worker"""
         if self.running and self.worker_task and not self.worker_task.done():
@@ -24,7 +40,12 @@ class TelegramScraperQueue:
             return
 
         if not self.client.is_connected():
-            self.client.start()
+            logger.info("Client is not running. Starting...")
+            try:
+                self.client.start()
+            except Exception as e:
+                logger.error(f"Error starting client: {e}")
+                raise
 
         self.running = True
         self.worker_task = asyncio.create_task(self._process_queue())
@@ -118,8 +139,13 @@ class TelegramScraperQueue:
         """Queue a task to get a channel ID"""
         return await self._enqueue_task(self._get_channel_id, channel)
 
-    # TODO: add retry logic
     @staticmethod
+    @retry(
+        retry=retry_if_exception_type((ConnectionError, OSError, TimeoutError, FloodWaitError)),
+        wait=wait_exponential(multiplier=1, min=4, max=10),
+        stop=stop_after_attempt(3),
+        before_sleep=before_sleep_log(logger, logging.WARNING),
+    )
     async def _get_today_messages(
         client: TelegramClient, channel_id: int | None = None, channel_name: str | None = None
     ):
@@ -164,6 +190,12 @@ class TelegramScraperQueue:
             raise
 
     @staticmethod
+    @retry(
+        retry=retry_if_exception_type((ConnectionError, OSError, TimeoutError, FloodWaitError)),
+        wait=wait_exponential(multiplier=1, min=4, max=10),
+        stop=stop_after_attempt(3),
+        before_sleep=before_sleep_log(logger, logging.WARNING),
+    )
     async def _get_channel_id(client: TelegramClient, channel: str):
         """The actual implementation of getting a channel ID"""
         logger.info(f"Getting channel ID for channel {channel}")

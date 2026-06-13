@@ -1,10 +1,11 @@
 from datetime import datetime, timedelta, timezone
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, create_autospec, patch
 
 import pytest
 
 with patch("telethon.TelegramClient", MagicMock), patch("openai.AsyncOpenAI", MagicMock):
     from app.services.scraper import TelegramScraperQueue
+    from telethon.types import Channel
 
 
 async def _async_iter(items):
@@ -80,7 +81,7 @@ async def test_only_recent_non_empty_returned():
 @pytest.mark.asyncio
 async def test_channel_id_gets_negative_100_prefix():
     client = MagicMock()
-    entity = MagicMock()
+    entity = create_autospec(Channel, instance=True)
     entity.id = 1027423644
     entity.username = "kolezev"
     entity.megagroup = True

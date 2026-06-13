@@ -40,12 +40,11 @@ class OpenAISummarizer:
         model_name: str,
         temperature: float,
     ):
-        self.client = AsyncOpenAI(api_key=token)
+        self.client = AsyncOpenAI(api_key=token, max_retries=3)
         self.model = model_name
         self.temperature = temperature
         self.system_prompt = system_prompt
 
-    # TODO: add retry logic
     async def generate(self, user_messages: str) -> SummaryModel:
         logger.info(f"Generating summary, input_length={len(user_messages)}")
 
