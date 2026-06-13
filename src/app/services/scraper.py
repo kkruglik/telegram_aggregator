@@ -69,11 +69,13 @@ class TelegramScraperQueue:
                 logger.info(f"Queue worker picked up: {task_func.__name__} kwargs={kwargs}, remaining={self.queue.qsize()}")
                 try:
                     result = await task_func(self.client, *args, **kwargs)
-                    future.set_result(result)
+                    if not future.cancelled():
+                        future.set_result(result)
                     logger.info(f"Queue worker done: {task_func.__name__} kwargs={kwargs}")
                 except Exception as e:
                     logger.error(f"Error processing task {task_func.__name__}: {str(e)}", exc_info=True)
-                    future.set_exception(e)
+                    if not future.cancelled():
+                        future.set_exception(e)
                 finally:
                     self.queue.task_done()
             except asyncio.CancelledError:
@@ -91,6 +93,7 @@ class TelegramScraperQueue:
         try:
             return await asyncio.wait_for(future, timeout=60)
         except asyncio.TimeoutError:
+            future.cancel()
             logger.error(f"Task {task_func.__name__} kwargs={kwargs} timed out after 60s")
             raise
 

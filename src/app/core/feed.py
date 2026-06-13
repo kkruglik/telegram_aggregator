@@ -75,12 +75,11 @@ class TelegramFeed:
     async def _summarize_content(self):
         logger.info(f"Summarizing feed {self.channel_id}")
 
-        tasks = []
-
-        for post_id in self.content["posts"].keys():
-            if self.content["posts"][post_id]["summary"] is None:
-                text = self.content["posts"][post_id]["text"]
-                tasks.append(self._get_or_generate_summary(self.channel_id, post_id, text))
+        tasks = [
+            self._get_or_generate_summary(self.channel_id, post_id, post["text"])
+            for post_id, post in self.content["posts"].items()
+            if post["summary"] is None
+        ]
 
         results = await asyncio.gather(*tasks)
 
