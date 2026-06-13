@@ -2,10 +2,10 @@ import logging
 from asyncio import sleep
 from datetime import time
 
-from aiogram import F, Router, types  # type: ignore
-from aiogram.filters import CommandStart  # type: ignore
-from aiogram.fsm.context import FSMContext  # type: ignore
-from aiogram.types import InaccessibleMessage, Message  # type: ignore
+from aiogram import F, Router, types
+from aiogram.filters import CommandStart
+from aiogram.fsm.context import FSMContext
+from aiogram.types import InaccessibleMessage, Message
 
 from ..states import RegistrationStates
 from ..utils import create_time_selection_keyboard, create_timezone_selection_keyboard

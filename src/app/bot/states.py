@@ -1,4 +1,4 @@
-from aiogram.fsm.state import State, StatesGroup  # type: ignore
+from aiogram.fsm.state import State, StatesGroup
 
 
 class FeedStates(StatesGroup):

@@ -1,9 +1,9 @@
 import logging
 
-from aiogram import F, Router, types  # type: ignore
-from aiogram.filters import Command  # type: ignore
-from aiogram.fsm.context import FSMContext  # type: ignore
-from aiogram.types import InaccessibleMessage, Message  # type: ignore
+from aiogram import F, Router, types
+from aiogram.filters import Command
+from aiogram.fsm.context import FSMContext
+from aiogram.types import InaccessibleMessage, Message
 
 from ...core.enums import ResponseStatus
 from ...core.registry import FeedsRegistry, UserRegistry
