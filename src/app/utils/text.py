@@ -1,5 +1,6 @@
 import logging
 import re
+from functools import lru_cache
 
 import pymorphy3
 
@@ -13,6 +14,7 @@ def _tokenize(text: str) -> list[str]:
     return [t for t in _PUNCT_RE.sub(" ", text.lower()).split() if t]
 
 
+@lru_cache(maxsize=4096)
 def _lemma(word: str) -> str:
     return _morph.parse(word)[0].normal_form
 
