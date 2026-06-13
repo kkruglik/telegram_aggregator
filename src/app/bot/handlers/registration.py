@@ -108,9 +108,11 @@ async def process_timezone(callback: types.CallbackQuery, state: FSMContext):
     user_id = callback.from_user.id
     if callback_data is None or callback_message is None:
         logger.error(f"process_timezone: callback data or message is None, user={user_id}")
+        await callback.answer()
         return
     if isinstance(callback_message, InaccessibleMessage):
         logger.error(f"process_timezone: callback message is InaccessibleMessage, user={user_id}")
+        await callback.answer()
         return
 
     user = await UserRegistry.get_or_create_user(user_id)
@@ -149,11 +151,13 @@ async def process_notification_time(callback: types.CallbackQuery, state: FSMCon
     user_id = callback.from_user.id
     if callback_data is None or callback_message is None:
         logger.error(f"process_notification_time: callback data or message is None, user={user_id}")
+        await callback.answer()
         return
     if isinstance(callback_message, InaccessibleMessage):
         logger.error(
             f"process_notification_time: callback message is InaccessibleMessage, user={user_id}"
         )
+        await callback.answer()
         return
 
     user = await UserRegistry.get_or_create_user(user_id)

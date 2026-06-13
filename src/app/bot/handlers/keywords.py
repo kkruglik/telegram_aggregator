@@ -54,11 +54,13 @@ async def process_keywords_feed(callback_query: types.CallbackQuery):
     user_id = callback_query.from_user.id
     if callback_data is None or callback_message is None:
         logger.error(f"process_keywords_feed: callback data or message is None, user={user_id}")
+        await callback_query.answer()
         return
     if isinstance(callback_message, InaccessibleMessage):
         logger.error(
             f"process_keywords_feed: callback message is InaccessibleMessage, user={user_id}"
         )
+        await callback_query.answer()
         return
 
     channel_id = int(callback_data.replace("__kw__", ""))
@@ -87,11 +89,13 @@ async def process_keywords_add(callback_query: types.CallbackQuery, state: FSMCo
     user_id = callback_query.from_user.id
     if callback_data is None or callback_message is None:
         logger.error(f"process_keywords_add: callback data or message is None, user={user_id}")
+        await callback_query.answer()
         return
     if isinstance(callback_message, InaccessibleMessage):
         logger.error(
             f"process_keywords_add: callback message is InaccessibleMessage, user={user_id}"
         )
+        await callback_query.answer()
         return
 
     channel_id = int(callback_data.replace("__kw_add__", ""))
@@ -119,6 +123,7 @@ async def process_keywords_close(callback_query: types.CallbackQuery):
         logger.warning(
             f"process_keywords_close: callback message is None or InaccessibleMessage, user={user_id}"
         )
+        await callback_query.answer()
         return
     logger.info(f"User {user_id} closed keyword menu")
     await callback_message.delete()
@@ -134,11 +139,13 @@ async def process_keywords_clear_callback(callback_query: types.CallbackQuery):
         logger.error(
             f"process_keywords_clear_callback: callback data or message is None, user={user_id}"
         )
+        await callback_query.answer()
         return
     if isinstance(callback_message, InaccessibleMessage):
         logger.error(
             f"process_keywords_clear_callback: callback message is InaccessibleMessage, user={user_id}"
         )
+        await callback_query.answer()
         return
 
     channel_id = int(callback_data.replace("__kw_clear__", ""))

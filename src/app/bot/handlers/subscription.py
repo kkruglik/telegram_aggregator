@@ -137,12 +137,14 @@ async def process_unsubscribe_callback(callback_query: types.CallbackQuery):
         logger.error(
             f"process_unsubscribe_callback: callback data or message is None, user={user_id}"
         )
+        await callback_query.answer()
         return
 
     if isinstance(callback_message, InaccessibleMessage):
         logger.error(
             f"process_unsubscribe_callback: callback message is InaccessibleMessage, user={user_id}"
         )
+        await callback_query.answer()
         return
 
     try:
