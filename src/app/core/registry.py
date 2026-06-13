@@ -1,21 +1,21 @@
 import asyncio
 import json
 import logging
+from typing import ClassVar
 from urllib.parse import urlparse
 
-from .feed import TelegramFeed
-from .user import User
 from ..db.repository import DatabaseRepository
 from ..services.scraper import scraper_client
 from ..services.summarizer import summarizer_client
 from ..services.tasks_scheduler import TasksScheduler
-
+from .feed import TelegramFeed
+from .user import User
 
 logger = logging.getLogger("news_aggregator")
 
 
 class UserRegistry:
-    _users: dict[int, User] = {}
+    _users: ClassVar[dict[int, User]] = {}
     _scheduler = TasksScheduler()
 
     @classmethod
@@ -144,7 +144,8 @@ class UserRegistry:
         )
 
         logger.info(
-            f"Scheduled notifications for user {user} at {notification_time.hour}:{notification_time.minute}:{user_timezone}"
+            f"Scheduled notifications for user {user} at "
+            f"{notification_time.hour}:{notification_time.minute}:{user_timezone}"
         )
         logger.info(
             f"Scheduled feed update for user {user} at {update_hour}:{update_minute}:{user_timezone}"
@@ -152,8 +153,8 @@ class UserRegistry:
 
 
 class FeedsRegistry:
-    feeds: dict[int, TelegramFeed] = {}
-    feeds_users_count: dict[int, int] = {}
+    feeds: ClassVar[dict[int, TelegramFeed]] = {}
+    feeds_users_count: ClassVar[dict[int, int]] = {}
 
     @classmethod
     async def initialize(cls) -> None:
@@ -250,7 +251,8 @@ class FeedsRegistry:
         if channel_id in cls.feeds:
             cls.feeds_users_count[channel_id] += 1
             logger.info(
-                f"Feed {normalized_feed_name} already exists, subscriber count increased to {cls.feeds_users_count[channel_id]}"
+                f"Feed {normalized_feed_name} already exists, "
+                f"subscriber count increased to {cls.feeds_users_count[channel_id]}"
             )
         else:
             result = await DatabaseRepository.create_feed(channel_id, channel_name)

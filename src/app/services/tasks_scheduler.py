@@ -1,9 +1,10 @@
 import asyncio
 import logging
-from typing import Callable, Dict, Any, Union, Coroutine
+from collections.abc import Callable, Coroutine
+from typing import Any
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from pytz import timezone, UTC
+from pytz import UTC, timezone
 
 logger = logging.getLogger("news_aggregator")
 
@@ -15,7 +16,7 @@ class TasksScheduler:
 
     def add_job(
         self,
-        func: Union[Callable[..., Coroutine[Any, Any, Any]], Callable[..., Any]],
+        func: Callable[..., Coroutine[Any, Any, Any]] | Callable[..., Any],
         job_id: str,
         interval_minutes: int | None = None,
         cron: str | None = None,
@@ -108,7 +109,7 @@ class TasksScheduler:
         self.scheduler.shutdown()
         logger.info("Scheduler shut down")
 
-    def _parse_cron(self, cron_string: str) -> Dict[str, Any]:
+    def _parse_cron(self, cron_string: str) -> dict[str, Any]:
         """Parse a cron string into kwargs for APScheduler"""
         parts = cron_string.split()
         if len(parts) != 5:

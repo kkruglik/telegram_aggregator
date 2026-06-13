@@ -1,25 +1,25 @@
-from ..services.scraper import TelegramScraperQueue
 import asyncio
 import logging
 from datetime import datetime
 
-from .enums import ResponseStatus
 from ..data_types import FeedContent, Post
 from ..db.repository import DatabaseRepository
+from ..services.scraper import TelegramScraperQueue
 from ..services.summarizer import SummarizeProtocol
 from ..utils.utils import log_async_performance
+from .enums import ResponseStatus
 
 logger = logging.getLogger("news_aggregator")
 
 
 class TelegramFeed:
     __slots__ = (
+        "_scraper_client",
+        "_summarizer_client",
         "channel_id",
         "channel_name",
-        "last_updated",
         "content",
-        "_summarizer_client",
-        "_scraper_client",
+        "last_updated",
     )
 
     def __init__(
@@ -62,7 +62,7 @@ class TelegramFeed:
             self.last_updated = messages["meta"]["date"]
 
         except Exception as e:
-            logger.error(f"Error updating {self.channel_id}: {str(e)}")
+            logger.error(f"Error updating {self.channel_id}: {e!s}")
 
     @log_async_performance()
     async def update(self):

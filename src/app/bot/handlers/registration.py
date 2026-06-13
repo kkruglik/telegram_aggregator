@@ -7,9 +7,9 @@ from aiogram.filters import CommandStart
 from aiogram.fsm.context import FSMContext
 from aiogram.types import InaccessibleMessage, Message
 
+from ...core.registry import UserRegistry
 from ..states import RegistrationStates
 from ..utils import create_time_selection_keyboard, create_timezone_selection_keyboard
-from ...core.registry import UserRegistry
 
 logger = logging.getLogger("news_aggregator")
 
@@ -40,7 +40,8 @@ async def start(message: Message, state: FSMContext):
 
         await message.answer(
             greeting
-            + f"📰 Your personalized news feed is active and your notification time is set to {user.notification_time}.\n\n"
+            + f"📰 Your personalized news feed is active and your notification time is set to "
+            f"{user.notification_time}.\n\n"
             f"{commands_list}",
             parse_mode="HTML",
         )
@@ -71,7 +72,10 @@ async def start(message: Message, state: FSMContext):
 
 @router.message(F.text == "/timezone")
 async def change_timezone(message: Message, state: FSMContext):
-    user_id = message.from_user.id if message.from_user else "unknown"
+    if message.from_user is None:
+        logger.warning("change_timezone: from_user is None")
+        return
+    user_id = message.from_user.id
     logger.info(f"User {user_id} requested timezone change")
     await message.answer(
         "📍 <b>Select your timezone: </b>\n\n",
@@ -84,7 +88,10 @@ async def change_timezone(message: Message, state: FSMContext):
 
 @router.message(F.text == "/notification_time")
 async def change_notification_time(message: Message, state: FSMContext):
-    user_id = message.from_user.id if message.from_user else "unknown"
+    if message.from_user is None:
+        logger.warning("change_notification_time: from_user is None")
+        return
+    user_id = message.from_user.id
     logger.info(f"User {user_id} requested notification time change")
     await message.answer(
         "Please select your preferred notification time:",

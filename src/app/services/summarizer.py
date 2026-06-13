@@ -1,9 +1,11 @@
-from openai.types.chat import ChatCompletionSystemMessageParam, ChatCompletionUserMessageParam
-from typing import Annotated, Protocol
-from pydantic import BaseModel, Field
-from openai import AsyncOpenAI
 import logging
 from asyncio import Semaphore
+from typing import Annotated, Protocol
+
+from openai import AsyncOpenAI
+from openai.types.chat import ChatCompletionSystemMessageParam, ChatCompletionUserMessageParam
+from pydantic import BaseModel, Field
+
 from ..config import config
 
 logger = logging.getLogger("news_aggregator")
@@ -63,7 +65,9 @@ class OpenAISummarizer:
         usage = response.usage
 
         logger.info(
-            f"Summary generated, tokens=({usage.prompt_tokens if usage else 'unk'} prompt / {usage.completion_tokens if usage else 'unk'} completion)"
+            f"Summary generated, tokens=("
+            f"{usage.prompt_tokens if usage else 'unk'} prompt / "
+            f"{usage.completion_tokens if usage else 'unk'} completion)"
         )
 
         msg = response.choices[0].message

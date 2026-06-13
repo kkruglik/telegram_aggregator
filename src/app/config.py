@@ -3,7 +3,7 @@ import os
 from dataclasses import dataclass, field, fields
 from functools import cached_property
 from pathlib import Path
-from typing import Dict, Optional, Any
+from typing import Any
 
 import yaml
 from google.cloud import secretmanager
@@ -28,7 +28,7 @@ class DatabaseConfig(ConfigSection):
     host: str
     port: str
     name: str
-    password: Optional[str] = None
+    password: str | None = None
 
     @cached_property
     def url(self) -> str:
@@ -42,8 +42,8 @@ class ScraperConfig(ConfigSection):
     """Scraper configuration section."""
 
     session_name: str
-    api_hash: Optional[str] = None
-    api_id: Optional[int] = None
+    api_hash: str | None = None
+    api_id: int | None = None
 
 
 @dataclass
@@ -57,7 +57,7 @@ class GCPConfig(ConfigSection):
 class BotConfig(ConfigSection):
     """Bot configuration section."""
 
-    token: Optional[str] = None
+    token: str | None = None
 
 
 @dataclass
@@ -76,11 +76,11 @@ class AppConfig:
     _base_dir: Path = field(default_factory=lambda: Path(__file__).resolve().parents[2])
 
     # Configuration sections
-    database: Optional[DatabaseConfig] = None
-    scraper: Optional[ScraperConfig] = None
-    gcp: Optional[GCPConfig] = None
-    bot: Optional[BotConfig] = None
-    openai: Optional[OpenAIConfig] = None
+    database: DatabaseConfig | None = None
+    scraper: ScraperConfig | None = None
+    gcp: GCPConfig | None = None
+    bot: BotConfig | None = None
+    openai: OpenAIConfig | None = None
 
     def load_from_yaml(self, yaml_path: Path) -> None:
         """Load configuration from YAML file."""
@@ -90,7 +90,7 @@ class AppConfig:
             raise FileNotFoundError(f"Configuration file {yaml_path} does not exist")
 
         try:
-            with open(yaml_path, "r") as file:
+            with open(yaml_path) as file:
                 config_data = yaml.safe_load(file)
 
             if not config_data:
@@ -149,7 +149,7 @@ class AppConfig:
             else:
                 logger.warning("Could not load Telegram session from Secret Manager")
 
-    def _create_from_dict(self, config_dict: Dict[str, Dict[str, Any]]) -> None:
+    def _create_from_dict(self, config_dict: dict[str, dict[str, Any]]) -> None:
         """Create configuration sections from dictionary."""
         if "database" in config_dict:
             self.database = DatabaseConfig(**config_dict["database"])
@@ -166,7 +166,7 @@ class AppConfig:
         if "openai" in config_dict:
             self.openai = OpenAIConfig(**config_dict["openai"])
 
-    def _get_secret(self, secret_id: str, version_id: str = "latest") -> Optional[str]:
+    def _get_secret(self, secret_id: str, version_id: str = "latest") -> str | None:
         """Get secret from Google Secret Manager."""
         try:
             client = secretmanager.SecretManagerServiceClient()

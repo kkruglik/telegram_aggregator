@@ -5,9 +5,9 @@ from aiogram.filters import Command  # type: ignore
 from aiogram.fsm.context import FSMContext  # type: ignore
 from aiogram.types import InaccessibleMessage, Message  # type: ignore
 
+from ...core.registry import UserRegistry
 from ..states import KeywordsStates
 from ..utils import create_keywords_actions_keyboard, create_keywords_feed_keyboard
-from ...core.registry import UserRegistry
 
 logger = logging.getLogger("news_aggregator")
 
@@ -116,7 +116,7 @@ async def process_keywords_close(callback_query: types.CallbackQuery):
     user_id = callback_query.from_user.id
     callback_message = callback_query.message
     if callback_message is None or isinstance(callback_message, InaccessibleMessage):
-        logger.error(
+        logger.warning(
             f"process_keywords_close: callback message is None or InaccessibleMessage, user={user_id}"
         )
         return

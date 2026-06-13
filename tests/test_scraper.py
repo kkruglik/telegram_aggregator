@@ -1,11 +1,12 @@
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from unittest.mock import AsyncMock, MagicMock, create_autospec, patch
 
 import pytest
 
 with patch("telethon.TelegramClient", MagicMock), patch("openai.AsyncOpenAI", MagicMock):
-    from app.services.scraper import TelegramScraperQueue
     from telethon.types import Channel
+
+    from app.services.scraper import TelegramScraperQueue
 
 
 async def _async_iter(items):
@@ -17,7 +18,7 @@ def _make_message(text: str, age_hours: float) -> MagicMock:
     msg = MagicMock()
     msg.text = text
     msg.id = id(msg)
-    msg.date = datetime.now(tz=timezone.utc) - timedelta(hours=age_hours)
+    msg.date = datetime.now(tz=UTC) - timedelta(hours=age_hours)
     return msg
 
 

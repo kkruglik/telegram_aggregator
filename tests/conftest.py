@@ -7,12 +7,12 @@ import pytest  # type: ignore
 
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from unittest.mock import Mock, patch, AsyncMock, MagicMock
+from unittest.mock import AsyncMock, MagicMock, Mock, patch
 
 with patch("telethon.TelegramClient", MagicMock), patch("openai.AsyncOpenAI", MagicMock):
-    from app.core.user import User  # type: ignore
-    from app.core.feed import TelegramFeed  # type: ignore
     from app.core.enums import Response  # type: ignore
+    from app.core.feed import TelegramFeed  # type: ignore
+    from app.core.user import User  # type: ignore
 
 
 @pytest.fixture

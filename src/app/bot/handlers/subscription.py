@@ -17,7 +17,10 @@ router = Router(name="subscription")
 
 @router.message(Command("subscribe"))
 async def subscribe(message: Message, state: FSMContext):
-    user_id = message.from_user.id if message.from_user else "unknown"
+    if message.from_user is None:
+        logger.warning("subscribe: from_user is None")
+        return
+    user_id = message.from_user.id
     logger.info(f"User {user_id} started subscription flow")
     await message.answer("Send channel name in format @channel_name or https://t.me/channel_name")
     await state.set_state(FeedStates.waiting_for_feed_name)

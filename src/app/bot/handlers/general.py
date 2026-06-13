@@ -58,7 +58,10 @@ async def cmd_upgrade_premium(message: Message):
 @router.message()
 async def echo(message: Message):
     """Echo all other messages - fallback handler"""
-    user_id = message.from_user.id if message.from_user else "unknown"
+    if message.from_user is None:
+        logger.warning("echo: from_user is None")
+        return
+    user_id = message.from_user.id
     logger.debug(f"User {user_id} sent unrecognized input: {message.text!r}")
     await message.answer(
         "🤔 I didn't understand that command.\n\n"

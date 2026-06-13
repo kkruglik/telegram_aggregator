@@ -1,5 +1,5 @@
-from datetime import datetime, date
-from typing import Dict, TypedDict, TypeVar, List
+from datetime import date, datetime
+from typing import TypedDict, TypeVar
 
 T = TypeVar("T")
 
@@ -16,7 +16,7 @@ class Message(TypedDict):
 
 class ChannelMessages(TypedDict):
     meta: MetaMessages
-    messages: List[Message]
+    messages: list[Message]
 
 
 class Post(TypedDict):
@@ -29,4 +29,4 @@ class Post(TypedDict):
 
 
 class FeedContent(TypedDict):
-    posts: Dict[int, Post]
+    posts: dict[int, Post]
