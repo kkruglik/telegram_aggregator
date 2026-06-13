@@ -140,11 +140,15 @@ class User:
         MESSAGE_LIMIT = 4096
         for feed_name, feed in self.user_feeds.items():
             if not feed.content["posts"]:
-                logger.info(f"User {self.id} feed {feed.channel_id} ({feed.channel_name}) is empty, skipping")
+                logger.info(
+                    f"User {self.id} feed {feed.channel_id} ({feed.channel_name}) is empty, skipping"
+                )
                 continue
 
             feed_filters = self.channel_filters.get(feed.channel_id, set())
-            logger.info(f"User {self.id} feed {feed.channel_id} ({feed.channel_name}): {len(feed_filters)} filters active: {feed_filters}")
+            logger.info(
+                f"User {self.id} feed {feed.channel_id} ({feed.channel_name}): {len(feed_filters)} filters active: {feed_filters}"
+            )
 
             feed_header = f"<b>@{feed.channel_name} feed</b>: \n\n"
             feed_content = feed.content["posts"]
@@ -166,7 +170,9 @@ class User:
                 else:
                     keyword_label = ""
 
-                post_text = f"{keyword_label}{post_content['summary']} \n{post_content['url']}\n\n---\n\n"
+                post_text = (
+                    f"{keyword_label}{post_content['summary']} \n{post_content['url']}\n\n---\n\n"
+                )
 
                 if len(current_message + post_text) > MESSAGE_LIMIT:
                     try:

@@ -14,27 +14,39 @@ router = Router(name="general")
 @router.message(Command("list"))
 async def cmd_list(message: Message):
     """Handle /list command - show the user's subscribed feeds"""
+    if message.from_user is None:
+        logger.warning("cmd_list: from_user is None")
+        return
     user_id = message.from_user.id
+    logger.info(f"User {user_id} requested feed list")
 
     try:
         user = await UserRegistry.get_or_create_user(user_id)
         feeds = user.get_user_feeds()
 
         if feeds:
+            logger.info(f"User {user_id} has {len(feeds)} subscriptions")
             feed_list = "\n".join([f"• {feed.channel_name}" for feed in feeds.values()])
             await message.answer(f"Your subscriptions:\n\n{feed_list}")
         else:
+            logger.info(f"User {user_id} has no subscriptions")
             await message.answer("You dont have any subscriptions. Type /subscribe to add some.")
     except KeyError:
+        logger.warning(f"User {user_id} not found in registry")
         await message.answer("Type /start to start the bot.")
 
 
 @router.message(Command("upgrade_premium"))
 async def cmd_upgrade_premium(message: Message):
     """Handle /upgrade_premium command - start the upgrade premium process"""
+    if message.from_user is None:
+        logger.warning("cmd_upgrade_premium: from_user is None")
+        return
     user_id = message.from_user.id
+    logger.info(f"User {user_id} requested premium upgrade")
     user = await UserRegistry.get_or_create_user(user_id)
     if user.is_premium:
+        logger.info(f"User {user_id} is already premium")
         await message.answer("You already have premium subscription.")
         return
 
@@ -46,6 +58,8 @@ async def cmd_upgrade_premium(message: Message):
 @router.message()
 async def echo(message: Message):
     """Echo all other messages - fallback handler"""
+    user_id = message.from_user.id if message.from_user else "unknown"
+    logger.debug(f"User {user_id} sent unrecognized input: {message.text!r}")
     await message.answer(
         "🤔 I didn't understand that command.\n\n"
         "📋 <b>Available Commands:</b>\n\n"

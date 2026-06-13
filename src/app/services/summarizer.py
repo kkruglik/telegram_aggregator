@@ -45,6 +45,7 @@ class OpenAISummarizer:
         self.temperature = temperature
         self.system_prompt = system_prompt
 
+    # TODO: add retry logic
     async def generate(self, user_messages: str) -> SummaryModel:
         logger.info(f"Generating summary, input_length={len(user_messages)}")
 

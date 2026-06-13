@@ -1,3 +1,4 @@
+from telethon.types import Channel
 import asyncio
 import logging
 from datetime import datetime, timedelta, timezone
@@ -23,7 +24,7 @@ class TelegramScraperQueue:
             return
 
         if not self.client.is_connected():
-            await self.client.start()
+            self.client.start()
 
         self.running = True
         self.worker_task = asyncio.create_task(self._process_queue())
@@ -66,14 +67,18 @@ class TelegramScraperQueue:
             logger.debug(f"Queue worker waiting for next task, queue size={self.queue.qsize()}")
             try:
                 task_func, args, kwargs, future = await self.queue.get()
-                logger.info(f"Queue worker picked up: {task_func.__name__} kwargs={kwargs}, remaining={self.queue.qsize()}")
+                logger.info(
+                    f"Queue worker picked up: {task_func.__name__} kwargs={kwargs}, remaining={self.queue.qsize()}"
+                )
                 try:
                     result = await task_func(self.client, *args, **kwargs)
                     if not future.cancelled():
                         future.set_result(result)
                     logger.info(f"Queue worker done: {task_func.__name__} kwargs={kwargs}")
                 except Exception as e:
-                    logger.error(f"Error processing task {task_func.__name__}: {str(e)}", exc_info=True)
+                    logger.error(
+                        f"Error processing task {task_func.__name__}: {str(e)}", exc_info=True
+                    )
                     if not future.cancelled():
                         future.set_exception(e)
                 finally:
@@ -86,10 +91,14 @@ class TelegramScraperQueue:
         logger.info("Queue worker exited")
 
     async def _enqueue_task(self, task_func, *args, **kwargs):
-        logger.info(f"Enqueuing {task_func.__name__} kwargs={kwargs}, queue size before={self.queue.qsize()}")
+        logger.info(
+            f"Enqueuing {task_func.__name__} kwargs={kwargs}, queue size before={self.queue.qsize()}"
+        )
         future = asyncio.Future()
         await self.queue.put((task_func, args, kwargs, future))
-        logger.info(f"Enqueued {task_func.__name__} kwargs={kwargs}, queue size after={self.queue.qsize()}")
+        logger.info(
+            f"Enqueued {task_func.__name__} kwargs={kwargs}, queue size after={self.queue.qsize()}"
+        )
         try:
             return await asyncio.wait_for(future, timeout=60)
         except asyncio.TimeoutError:
@@ -109,12 +118,16 @@ class TelegramScraperQueue:
         """Queue a task to get a channel ID"""
         return await self._enqueue_task(self._get_channel_id, channel)
 
+    # TODO: add retry logic
     @staticmethod
     async def _get_today_messages(
-        client: TelegramClient, channel_id: int = None, channel_name: str = None
+        client: TelegramClient, channel_id: int | None = None, channel_name: str | None = None
     ):
         """Get messages from the last 24 hours"""
         channel_entity = channel_name or channel_id
+
+        if channel_entity is None:
+            raise ValueError("Either channel_id or channel_name must be provided")
 
         logger.info(f"Getting messages from last 24 hours for channel {channel_entity}")
 
@@ -157,6 +170,9 @@ class TelegramScraperQueue:
 
         try:
             entity = await client.get_entity(channel)
+            if not isinstance(entity, Channel):
+                raise ValueError(f"Output entity of {channel} is not a channel. Output: {entity}")
+
             channel_id = entity.id
             username = entity.username
 

@@ -17,9 +17,9 @@ class TasksScheduler:
         self,
         func: Union[Callable[..., Coroutine[Any, Any, Any]], Callable[..., Any]],
         job_id: str,
-        interval_minutes: int = None,
-        cron: str = None,
-        timezone_name: str = None,
+        interval_minutes: int | None = None,
+        cron: str | None = None,
+        timezone_name: str | None = None,
         **kwargs,
     ) -> str:
         """

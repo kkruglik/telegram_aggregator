@@ -143,9 +143,7 @@ class AppConfig:
                         )
 
         if self.scraper and self.scraper.session_name:
-            session_path = os.path.join(
-                self._base_dir, f"{self.scraper.session_name}.session"
-            )
+            session_path = os.path.join(self._base_dir, f"{self.scraper.session_name}.session")
             if self._get_secret_file("telegram_scraper_session", session_path):
                 logger.info(f"Loaded Telegram session to {session_path} from Secret Manager")
             else:
