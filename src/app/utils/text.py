@@ -1,5 +1,6 @@
 import logging
 import re
+from functools import lru_cache
 
 import pymorphy3
 
@@ -13,8 +14,14 @@ def _tokenize(text: str) -> list[str]:
     return [t for t in _PUNCT_RE.sub(" ", text.lower()).split() if t]
 
 
+@lru_cache(maxsize=4096)
 def _lemma(word: str) -> str:
     return _morph.parse(word)[0].normal_form
+
+
+@lru_cache(maxsize=512)
+def _keyword_lemmas(kw: str) -> frozenset[str]:
+    return frozenset(_lemma(t) for t in _tokenize(kw))
 
 
 def find_matched_keyword(text: str, keywords: set[str]) -> str | None:
@@ -26,8 +33,8 @@ def find_matched_keyword(text: str, keywords: set[str]) -> str | None:
         return None
     text_lemmas = {_lemma(t) for t in _tokenize(text)}
     for kw in keywords:
-        kw_lemmas = {_lemma(t) for t in _tokenize(kw)}
-        if kw_lemmas and kw_lemmas <= text_lemmas:
+        kw_lemmas = _keyword_lemmas(kw)
+        if kw_lemmas and kw_lemmas.issubset(text_lemmas):
             logger.debug(f"Keyword matched: '{kw}' (lemmas: {kw_lemmas})")
             return kw
     return None

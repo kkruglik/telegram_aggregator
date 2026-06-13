@@ -2,14 +2,13 @@ import asyncio
 import logging
 from datetime import time
 
-
 from aiogram import Bot  # type: ignore
 
 from ..db.repository import DatabaseRepository
-from .feed import TelegramFeed
-from .enums import ResponseStatus, Response
-from ..utils.utils import log_async_performance
 from ..utils.text import find_matched_keyword
+from ..utils.utils import log_async_performance
+from .enums import Response, ResponseStatus
+from .feed import TelegramFeed
 
 logger = logging.getLogger("news_aggregator")
 
@@ -17,12 +16,12 @@ logger = logging.getLogger("news_aggregator")
 class User:
     _bot = None
     __slots__ = (
+        "channel_filters",
         "id",
-        "user_feeds",
+        "is_premium",
         "notification_time",
         "timezone",
-        "is_premium",
-        "channel_filters",
+        "user_feeds",
     )
 
     def __init__(
@@ -100,7 +99,8 @@ class User:
         existing = self.channel_filters.get(channel_id, set())
         self.channel_filters[channel_id] = existing | keywords
         logger.info(
-            f"User {self.id} appending keywords {keywords} to channel {channel_id}. Total: {self.channel_filters[channel_id]}"
+            f"User {self.id} appending keywords {keywords} to channel {channel_id}. "
+            f"Total: {self.channel_filters[channel_id]}"
         )
         await DatabaseRepository.update_user_channels_filters(self.id, self.channel_filters)
         logger.info(f"User {self.id} channel {channel_id} filters saved")
@@ -122,10 +122,10 @@ class User:
 
         results = await asyncio.gather(*tasks, return_exceptions=True)
 
-        for feed, result in zip(self.user_feeds.values(), results):
+        for feed, result in zip(self.user_feeds.values(), results, strict=False):
             if isinstance(result, Exception):
                 logger.error(
-                    f"Failed to update feed {feed.channel_id} for user {self.id}: {str(result)}"
+                    f"Failed to update feed {feed.channel_id} for user {self.id}: {result!s}"
                 )
                 logger.error("Exception details:", exc_info=result)
 
@@ -138,13 +138,18 @@ class User:
             f"channel_filters={self.channel_filters}"
         )
         MESSAGE_LIMIT = 4096
-        for feed_name, feed in self.user_feeds.items():
+        for _, feed in self.user_feeds.items():
             if not feed.content["posts"]:
-                logger.info(f"User {self.id} feed {feed.channel_id} ({feed.channel_name}) is empty, skipping")
+                logger.info(
+                    f"User {self.id} feed {feed.channel_id} ({feed.channel_name}) is empty, skipping"
+                )
                 continue
 
             feed_filters = self.channel_filters.get(feed.channel_id, set())
-            logger.info(f"User {self.id} feed {feed.channel_id} ({feed.channel_name}): {len(feed_filters)} filters active: {feed_filters}")
+            logger.info(
+                f"User {self.id} feed {feed.channel_id} ({feed.channel_name}): "
+                f"{len(feed_filters)} filters active: {feed_filters}"
+            )
 
             feed_header = f"<b>@{feed.channel_name} feed</b>: \n\n"
             feed_content = feed.content["posts"]
@@ -166,7 +171,9 @@ class User:
                 else:
                     keyword_label = ""
 
-                post_text = f"{keyword_label}{post_content['summary']} \n{post_content['url']}\n\n---\n\n"
+                post_text = (
+                    f"{keyword_label}{post_content['summary']} \n{post_content['url']}\n\n---\n\n"
+                )
 
                 if len(current_message + post_text) > MESSAGE_LIMIT:
                     try:

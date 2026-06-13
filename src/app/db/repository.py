@@ -5,8 +5,8 @@ from datetime import time
 
 import asyncpg  # type: ignore
 
-from .migrations_manager import MigrationManager
 from ..core.enums import Response, ResponseStatus
+from .migrations_manager import MigrationManager
 
 logger = logging.getLogger("news_aggregator")
 

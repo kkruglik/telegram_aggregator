@@ -4,11 +4,11 @@ import os
 
 from .bot.bot import init_bot
 from .config import config
-from .core.registry import UserRegistry, FeedsRegistry
+from .core.registry import FeedsRegistry, UserRegistry
 from .core.user import User
 from .db.repository import DatabaseRepository
 from .services.scraper import scraper_client
-from .utils.utils import load_yaml, setup_cloud_logging, set_bot_commands
+from .utils.utils import load_yaml, set_bot_commands, setup_cloud_logging
 
 logger = logging.getLogger("news_aggregator")
 logging.config.dictConfig(load_yaml("config/logger.yaml"))

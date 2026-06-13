@@ -1,6 +1,5 @@
-import pytest
-from app.utils.text import matches_keywords, find_matched_keyword
 
+from app.utils.text import find_matched_keyword, matches_keywords
 
 # ---------------------------------------------------------------------------
 # Single words — basic morphology

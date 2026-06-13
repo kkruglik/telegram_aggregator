@@ -1,6 +1,6 @@
-from enum import StrEnum, auto
 from dataclasses import dataclass
-from typing import Optional, Dict, Any, Self
+from enum import StrEnum, auto
+from typing import Any, Self
 
 
 class ResponseStatus(StrEnum):
@@ -31,7 +31,7 @@ class Response:
     status: ResponseStatus
     message: str = ""
     data: Any | None = None
-    details: Optional[Dict[str, Any]] = None
+    details: dict[str, Any] | None = None
 
     @property
     def is_success(self) -> bool:

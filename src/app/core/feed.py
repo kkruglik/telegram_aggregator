@@ -1,25 +1,25 @@
-from ..services.scraper import TelegramScraperQueue
 import asyncio
 import logging
 from datetime import datetime
 
-from .enums import ResponseStatus
 from ..data_types import FeedContent, Post
 from ..db.repository import DatabaseRepository
+from ..services.scraper import TelegramScraperQueue
 from ..services.summarizer import SummarizeProtocol
 from ..utils.utils import log_async_performance
+from .enums import ResponseStatus
 
 logger = logging.getLogger("news_aggregator")
 
 
 class TelegramFeed:
     __slots__ = (
+        "_scraper_client",
+        "_summarizer_client",
         "channel_id",
         "channel_name",
-        "last_updated",
         "content",
-        "_summarizer_client",
-        "_scraper_client",
+        "last_updated",
     )
 
     def __init__(
@@ -42,7 +42,9 @@ class TelegramFeed:
     async def _get_todays_posts(self) -> None:
         try:
             messages = await self._scraper_client.get_today_messages_by_name(self.channel_name)
-            logger.info(f"Feed {self.channel_id} ({self.channel_name}): {len(messages['messages'])} messages received")
+            logger.info(
+                f"Feed {self.channel_id} ({self.channel_name}): {len(messages['messages'])} messages received"
+            )
             updated_at = datetime.now()
             for message in reversed(messages["messages"]):
                 if message["id"] not in self.content["posts"]:
@@ -60,7 +62,7 @@ class TelegramFeed:
             self.last_updated = messages["meta"]["date"]
 
         except Exception as e:
-            logger.error(f"Error updating {self.channel_id}: {str(e)}")
+            logger.error(f"Error updating {self.channel_id}: {e!s}")
 
     @log_async_performance()
     async def update(self):
@@ -75,12 +77,11 @@ class TelegramFeed:
     async def _summarize_content(self):
         logger.info(f"Summarizing feed {self.channel_id}")
 
-        tasks = []
-
-        for post_id in self.content["posts"].keys():
-            if self.content["posts"][post_id]["summary"] is None:
-                text = self.content["posts"][post_id]["text"]
-                tasks.append(self._get_or_generate_summary(self.channel_id, post_id, text))
+        tasks = [
+            self._get_or_generate_summary(self.channel_id, post_id, post["text"])
+            for post_id, post in self.content["posts"].items()
+            if post["summary"] is None
+        ]
 
         results = await asyncio.gather(*tasks)
 

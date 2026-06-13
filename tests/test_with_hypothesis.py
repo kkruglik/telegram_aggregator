@@ -1,7 +1,8 @@
 from unittest.mock import Mock, patch
 
 import pytest  # type: ignore
-from hypothesis import given, strategies as st  # type: ignore
+from hypothesis import given  # type: ignore
+from hypothesis import strategies as st
 
 from app.core.enums import ResponseStatus  # type: ignore
 from app.core.feed import TelegramFeed  # type: ignore

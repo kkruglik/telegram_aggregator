@@ -2,9 +2,9 @@ import logging
 import logging.config
 import os
 import time
+from collections.abc import Callable
 from functools import wraps
 from pathlib import Path
-from typing import Callable
 
 import google.cloud.logging  # type: ignore
 import yaml  # type: ignore
@@ -15,7 +15,7 @@ logger = logging.getLogger("news_aggregator")
 
 
 def load_yaml(path: str | Path) -> dict:
-    with open(path, "rt") as f:
+    with open(path) as f:
         try:
             config = yaml.safe_load(f.read())
             return config
@@ -36,7 +36,7 @@ def setup_logging(
     path = os.getenv(env_key, default_path)
 
     if os.path.exists(path):
-        with open(path, "rt") as f:
+        with open(path) as f:
             try:
                 config = yaml.safe_load(f.read())
 
