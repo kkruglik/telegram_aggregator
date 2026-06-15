@@ -185,7 +185,7 @@ class FeedsRegistry:
     async def update_all_feeds(cls) -> None:
         logger.info(f"Updating all {len(cls.feeds)} feeds")
         tasks = [feed.update() for feed in cls.feeds.values()]
-        await asyncio.gather(*tasks)
+        await asyncio.gather(*tasks, return_exceptions=True)
 
     @classmethod
     def get_feed_by_id(cls, feed_id: int) -> TelegramFeed:
