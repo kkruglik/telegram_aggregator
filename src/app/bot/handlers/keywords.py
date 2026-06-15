@@ -1,6 +1,7 @@
 import logging
 
 from aiogram import F, Router, types  # type: ignore
+from aiogram.exceptions import TelegramBadRequest  # type: ignore
 from aiogram.filters import Command  # type: ignore
 from aiogram.fsm.context import FSMContext  # type: ignore
 from aiogram.types import InaccessibleMessage, Message  # type: ignore
@@ -74,11 +75,15 @@ async def process_keywords_feed(callback_query: types.CallbackQuery):
         f"User {user_id} viewing keywords for channel {channel_id} ({channel_name}): {current}"
     )
 
-    await callback_message.edit_text(
-        _format_keywords_message(channel_name, current),
-        parse_mode="HTML",
-        reply_markup=create_keywords_actions_keyboard(channel_id),
-    )
+    try:
+        await callback_message.edit_text(
+            _format_keywords_message(channel_name, current),
+            parse_mode="HTML",
+            reply_markup=create_keywords_actions_keyboard(channel_id),
+        )
+    except TelegramBadRequest as e:
+        if "message is not modified" not in str(e):
+            raise
     await callback_query.answer()
 
 
@@ -104,14 +109,18 @@ async def process_keywords_add(callback_query: types.CallbackQuery, state: FSMCo
     await state.update_data(channel_id=channel_id)
     await state.set_state(KeywordsStates.waiting_for_keywords)
 
-    await callback_message.edit_text(
-        "🔍 <b>Add keywords</b>\n\n"
-        "Only posts that contain these words will be delivered to you.\n\n"
-        "<i>Example:</i> <code>politics, economy, AI</code>\n\n"
-        "New keywords will be added to existing ones.",
-        parse_mode="HTML",
-        reply_markup=None,
-    )
+    try:
+        await callback_message.edit_text(
+            "🔍 <b>Add keywords</b>\n\n"
+            "Only posts that contain these words will be delivered to you.\n\n"
+            "<i>Example:</i> <code>politics, economy, AI</code>\n\n"
+            "New keywords will be added to existing ones.",
+            parse_mode="HTML",
+            reply_markup=None,
+        )
+    except TelegramBadRequest as e:
+        if "message is not modified" not in str(e):
+            raise
     await callback_query.answer()
 
 
@@ -158,11 +167,15 @@ async def process_keywords_clear_callback(callback_query: types.CallbackQuery):
     await user.clear_channel_filters(channel_id)
     logger.info(f"User {user_id} cleared keywords for channel {channel_id}")
 
-    await callback_message.edit_text(
-        _format_keywords_message(channel_name, set()),
-        parse_mode="HTML",
-        reply_markup=create_keywords_actions_keyboard(channel_id),
-    )
+    try:
+        await callback_message.edit_text(
+            _format_keywords_message(channel_name, set()),
+            parse_mode="HTML",
+            reply_markup=create_keywords_actions_keyboard(channel_id),
+        )
+    except TelegramBadRequest as e:
+        if "message is not modified" not in str(e):
+            raise
     await callback_query.answer("Keywords cleared.")
 
 

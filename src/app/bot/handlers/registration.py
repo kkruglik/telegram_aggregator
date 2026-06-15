@@ -3,6 +3,7 @@ from asyncio import sleep
 from datetime import time
 
 from aiogram import F, Router, types
+from aiogram.exceptions import TelegramBadRequest
 from aiogram.filters import CommandStart
 from aiogram.fsm.context import FSMContext
 from aiogram.types import InaccessibleMessage, Message
@@ -172,11 +173,17 @@ async def process_notification_time(callback: types.CallbackQuery, state: FSMCon
     await user.save_user_to_database()
     UserRegistry.schedule_user_updates(user.id)
 
-    await callback_message.edit_text(
-        f"⏰ <b>Notification Time Selected:</b> {selected_time} ✅",
-        parse_mode="HTML",
-        reply_markup=None,
-    )
+    try:
+        await callback_message.edit_text(
+            f"⏰ <b>Notification Time Selected:</b> {selected_time} ✅",
+            parse_mode="HTML",
+            reply_markup=None,
+        )
+    except TelegramBadRequest as e:
+        if "message is not modified" in str(e):
+            await callback.answer()
+            return
+        raise
 
     await callback.answer()
 
