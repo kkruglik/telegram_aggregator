@@ -172,7 +172,7 @@ class User:
                     keyword_label = ""
 
                 post_text = (
-                    f"{keyword_label}{post_content['summary']} \n{post_content['url']}\n\n---\n\n"
+                    f"{keyword_label}{post_content['summary']} \n{post_content['url']}\n\n──────────\n\n"
                 )
 
                 if len(current_message + post_text) > MESSAGE_LIMIT:
