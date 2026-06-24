@@ -15,9 +15,7 @@ semaphore = Semaphore(value=10)
 
 
 class SummaryModel(BaseModel):
-    reasoning: Annotated[
-        str, Field(..., description="One sentence explaining the summarization decision.")
-    ]
+    reasoning: Annotated[str, Field(..., description="One sentence explaining the summarization decision.")]
     summary: Annotated[
         str,
         Field(
@@ -25,9 +23,7 @@ class SummaryModel(BaseModel):
             description="Bullet-point summary of the input text, each bullet starting with '—'.",
         ),
     ]
-    tags: Annotated[
-        list[str], Field(..., description="3-5 short topic tags extracted from the text.")
-    ]
+    tags: Annotated[list[str], Field(..., description="3-5 short topic tags extracted from the text.")]
 
 
 class SummarizeProtocol(Protocol):
@@ -52,7 +48,8 @@ class OpenAISummarizer:
 
         messages = []
         messages.append(ChatCompletionSystemMessageParam(role="system", content=self.system_prompt))
-        messages.append(ChatCompletionUserMessageParam(role="user", content=user_messages))
+        wrapped_user_message = f"<post>\n{user_messages}\n</post>"
+        messages.append(ChatCompletionUserMessageParam(role="user", content=wrapped_user_message))
 
         async with semaphore:
             response = await self.client.beta.chat.completions.parse(
