@@ -18,7 +18,7 @@ jobs:
 
     steps:
       - name: "Checkout deployment files"
-        uses: "actions/checkout@v4"
+        uses: "actions/checkout@v7"
         with:
           sparse-checkout: |
             docker-compose.deploy.yaml
